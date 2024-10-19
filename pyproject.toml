@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "data-mining-project"
+version = "0.1.0"
+description = "This is the environment (for now) for the data mining project"
+authors = ["Sven Goerdes <Sven@Goerdes.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+pandas = "^2.2.3"
+numpy = "^2.1.2"
+scikit-learn = "^1.5.2"
+
+[tool.poetry.group.dev.dependencies]
+nbdime = "^4.0.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
