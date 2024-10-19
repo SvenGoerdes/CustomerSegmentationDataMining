@@ -3,4 +3,6 @@ Pipfile
 Pipfile.lock
 /Example_Project_ML
 /Data
+poetry.lock
+pyproject.toml
 

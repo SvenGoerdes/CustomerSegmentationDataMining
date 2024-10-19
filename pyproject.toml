@@ -6,10 +6,12 @@ authors = ["Sven Goerdes <Sven@Goerdes.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = "3.12.4"
 pandas = "^2.2.3"
 numpy = "^2.1.2"
 scikit-learn = "^1.5.2"
+jupyter = "^1.1.1"
+scikit-image = "^0.24.0"
 
 [tool.poetry.group.dev.dependencies]
 nbdime = "^4.0.2"
