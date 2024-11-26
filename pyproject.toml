@@ -6,7 +6,7 @@ authors = ["Sven Goerdes <Sven@Goerdes.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "3.12.6"
+python = "3.12.7"
 pandas = "^2.2.3"
 numpy = "^2.1.2"
 scikit-learn = "^1.5.2"
