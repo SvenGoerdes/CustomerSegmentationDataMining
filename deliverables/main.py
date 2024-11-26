@@ -21,6 +21,7 @@ def plot_grouped_distributions(df, group_by_variable, color_palette, exclude_pre
     """
     # Set seaborn style and color palette
     sns.set_theme()
+    sns.set_style('whitegrid')
     sns.set_palette(color_palette)
 
     # Define the order of the group_by_variable categories based on frequency
@@ -111,7 +112,7 @@ def plot_grouped_distributions(df, group_by_variable, color_palette, exclude_pre
     
     
 #The following function will be used 4.3. Missing Values
-def plot_customer_distributions(df, age_column, spending_column, orders_column, vendor_column, product_column):
+def plot_customer_distributions(df, age_column, spending_column, orders_column, vendor_column, product_column, color_palette):
     """
     Plots distributions and relationships for customer data including age, spending, orders, vendors, and products.
 
@@ -125,6 +126,7 @@ def plot_customer_distributions(df, age_column, spending_column, orders_column, 
     """
     # Set seaborn style
     sns.set_theme()
+    sns.set_style('whitegrid')
     sns.set_palette(color_palette) 
 
     # Create a new dataframe with age bins
@@ -223,6 +225,7 @@ def plot_correlation_heatmap(dataframe, features, title, cmap='coolwarm'):
 
     # Set the seaborn theme
     sns.set_theme()
+    sns.set_style('whitegrid')
 
     # Plot the correlation matrix as a heatmap
     plt.figure(figsize=(10, 8))
@@ -260,7 +263,8 @@ def plot_distribution(
     xlim=None, 
     show_counts=False, 
     figsize=(8, 6), 
-    order=None
+    order=None,
+    color_palette=None
 ):
     """
     Plots a distribution with an optional parameter to show counts above bars.
@@ -280,6 +284,7 @@ def plot_distribution(
     order (list): Order for categorical variables (default: None).
     """
     # Set the figure size
+    sns.set_style('whitegrid')
     sns.set_palette(color_palette)
     plt.figure(figsize=figsize)
     
