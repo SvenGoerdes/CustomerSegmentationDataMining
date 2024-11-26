@@ -4,6 +4,7 @@ import math
 import pandas as pd
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
+from sklearn.preprocessing import StandardScaler
 
 '''
 FUNCTIONS USED IN DM2425_Part2_10_01.ipynb
@@ -451,3 +452,26 @@ def get_r2_hc(df, link_method, max_nclus, min_nclus=1, dist="euclidean"):
         r2.append(get_rsq(df_concat, feats, 'labels'))
         
     return np.array(r2)
+
+# The following function will be used in 7. Data Normalization
+def scaled_dataframe(columns: list, df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Scales the specified columns in the DataFrame using StandardScaler.
+
+    Parameters:
+    columns (list): List of column names to scale.
+    df (DataFrame): DataFrame containing the columns to scale.
+
+    Returns:
+    DataFrame: A DataFrame with the specified columns scaled.
+    """
+    # Create a copy of the DataFrame
+    df_scaled = df.copy()
+
+    # Initialize the StandardScaler
+    scaler = StandardScaler()
+
+    # Fit and transform the data
+    df_scaled[columns] = scaler.fit_transform(df_scaled[columns])
+
+    return df_scaled
