@@ -328,6 +328,53 @@ def plot_distribution(
     # Display the plot
     plt.tight_layout()
     plt.show()
+    
+
+#The following function will be used in 6. Feature Selection
+def plot_matrix(data, title="Correlation Matrix", threshold=0.5, figsize=(24, 16)):
+    """
+    Plot a heatmap of the correlation matrix with annotations based on a threshold.
+    
+    Parameters:
+        data (DataFrame): Correlation matrix to be visualized.
+        title (str): Title of the plot.
+        threshold (float): Minimum absolute value of correlations to annotate.
+        figsize (tuple): Figure size for the plot.
+    """
+    # Annotate only values above the threshold
+    mask_annot = np.absolute(data.values) >= threshold
+    annot = np.where(mask_annot, np.round(data.values, 2), "")
+
+    # Create a mask for the upper triangle
+    upper_triangle_mask = np.triu(np.ones_like(data, dtype=bool))
+
+    # Prepare figure
+    plt.figure(figsize=figsize)
+
+    # Plot heatmap
+    sns.heatmap(
+        data=data,
+        mask=upper_triangle_mask,  # Apply mask
+        annot=annot,  # Custom annotation
+        fmt="",  # Avoid conflicting formats
+        vmin=-1, vmax=1, center=0,  # Adjust color scale
+        square=True, linewidths=0.5,  # Aesthetics
+        cmap="PiYG",  # Colormap
+    )
+
+    # Set plot title
+    plt.title(title, fontsize=16, weight="bold")
+
+    # Show plot
+    plt.show()
+    
+ 
+  
+  
+  
+  
+  
+    
 
 
 def get_ss(df, feats):
