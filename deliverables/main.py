@@ -6,12 +6,15 @@ import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.preprocessing import StandardScaler
 
-'''
+"""
 FUNCTIONS USED IN DM2425_Part2_10_01.ipynb
-'''
+"""
 
-#The following function will be used 4.3. Missing Values
-def plot_grouped_distributions(df, group_by_variable, color_palette, exclude_prefixes=["CUI", "DOW", "HR"]):
+
+# The following function will be used 4.3. Missing Values
+def plot_grouped_distributions(
+    df, group_by_variable, color_palette, exclude_prefixes=["CUI", "DOW", "HR"]
+):
     """
     Plots distributions of variables grouped by a specific categorical variable.
 
@@ -23,7 +26,7 @@ def plot_grouped_distributions(df, group_by_variable, color_palette, exclude_pre
     """
     # Set seaborn style and color palette
     sns.set_theme()
-    sns.set_style('whitegrid')
+    sns.set_style("whitegrid")
     sns.set_palette(color_palette)
 
     # Define the order of the group_by_variable categories based on frequency
@@ -32,21 +35,27 @@ def plot_grouped_distributions(df, group_by_variable, color_palette, exclude_pre
     # Special handling for '-' in 'customer_region'
     if group_by_variable == "customer_region" and "-" in category_order:
         category_order = ["-"] + sorted(
-            [region for region in category_order if region != "-"], key=lambda x: int(x), reverse=True
+            [region for region in category_order if region != "-"],
+            key=lambda x: int(x),
+            reverse=True,
         )
 
     # Separate numeric and categorical variables
-    numeric_vars = df.select_dtypes(include=['number']).columns.tolist()
-    categorical_vars = df.select_dtypes(exclude=['number']).columns.tolist()
+    numeric_vars = df.select_dtypes(include=["number"]).columns.tolist()
+    categorical_vars = df.select_dtypes(exclude=["number"]).columns.tolist()
 
     # Select variables to plot, excluding the group_by_variable and prefixed columns
     variables_to_plot = [
-        col for col in df.columns
-        if col != group_by_variable and not any(col.startswith(prefix) for prefix in exclude_prefixes)
+        col
+        for col in df.columns
+        if col != group_by_variable
+        and not any(col.startswith(prefix) for prefix in exclude_prefixes)
     ]
 
     # Calculate grid layout for subplots
-    total_features = len(variables_to_plot) + 2  # +2 for the main plot and additional plots
+    total_features = (
+        len(variables_to_plot) + 2
+    )  # +2 for the main plot and additional plots
     sp_rows = math.ceil(math.sqrt(total_features))
     sp_cols = math.ceil(total_features / sp_rows)
 
@@ -55,66 +64,121 @@ def plot_grouped_distributions(df, group_by_variable, color_palette, exclude_pre
     axes = axes.flatten()
 
     # Plot the main group_by_variable countplot
-    sns.countplot(data=df, x=group_by_variable, ax=axes[0], order=category_order, palette=color_palette)
+    sns.countplot(
+        data=df,
+        x=group_by_variable,
+        ax=axes[0],
+        order=category_order,
+        palette=color_palette,
+    )
     axes[0].set(xlabel=group_by_variable, ylabel="Count")
-    axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=0, ha='center')
+    axes[0].set_xticklabels(axes[0].get_xticklabels(), rotation=0, ha="center")
 
     # Loop through variables to plot each one
     for ax, feat in zip(axes[1:], variables_to_plot):
         if feat == "customer_region" and group_by_variable == "last_promo":
-            sns.countplot(data=df, x=feat, hue=group_by_variable, ax=ax, hue_order=category_order, palette=color_palette)
+            sns.countplot(
+                data=df,
+                x=feat,
+                hue=group_by_variable,
+                ax=ax,
+                hue_order=category_order,
+                palette=color_palette,
+            )
             ax.set(xlabel="customer_region", ylabel="Count")
-            ax.legend(title=group_by_variable, loc='upper right')
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha='center')
+            ax.legend(title=group_by_variable, loc="upper right")
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center")
         elif feat == "total_orders":
-            sns.histplot(data=df, x=feat, ax=ax, bins=10, hue=group_by_variable, kde=True, hue_order=category_order)
+            sns.histplot(
+                data=df,
+                x=feat,
+                ax=ax,
+                bins=10,
+                hue=group_by_variable,
+                kde=True,
+                hue_order=category_order,
+            )
             ax.set(xlabel="Total Orders", ylabel="Density")
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha='center')
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center")
         elif feat in numeric_vars:
-            sns.histplot(data=df, x=feat, ax=ax, bins=10, hue=group_by_variable, kde=True, hue_order=category_order)
+            sns.histplot(
+                data=df,
+                x=feat,
+                ax=ax,
+                bins=10,
+                hue=group_by_variable,
+                kde=True,
+                hue_order=category_order,
+            )
             ax.set(ylabel="Density")
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha='center')
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center")
         else:
             # For other categorical variables, plot stacked bar chart
-            stacked_data = df.groupby([group_by_variable, feat]).size().unstack(fill_value=0)
-            stacked_data = stacked_data.loc[category_order]  # Reorder rows to match group_by_variable order
-            stacked_data.div(stacked_data.sum(axis=1), axis=0).plot(kind='bar', stacked=True, ax=ax)
+            stacked_data = (
+                df.groupby([group_by_variable, feat]).size().unstack(fill_value=0)
+            )
+            stacked_data = stacked_data.loc[
+                category_order
+            ]  # Reorder rows to match group_by_variable order
+            stacked_data.div(stacked_data.sum(axis=1), axis=0).plot(
+                kind="bar", stacked=True, ax=ax
+            )
             ax.set(xlabel=group_by_variable, ylabel="Proportion")
-            ax.legend(title=feat, bbox_to_anchor=(1, 1), loc='upper left')
-            ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha='center')
+            ax.legend(title=feat, bbox_to_anchor=(1, 1), loc="upper left")
+            ax.set_xticklabels(ax.get_xticklabels(), rotation=0, ha="center")
 
     # Plot cuisine variables separately
-    cuisine_columns = [col for col in df.columns if col.startswith('CUI_')]
+    cuisine_columns = [col for col in df.columns if col.startswith("CUI_")]
     if cuisine_columns:
         cuisine_data = df.groupby(group_by_variable)[cuisine_columns].sum()
-        cuisine_data = cuisine_data.loc[category_order]  # Ensure the order is maintained
+        cuisine_data = cuisine_data.loc[
+            category_order
+        ]  # Ensure the order is maintained
         cuisine_proportion = cuisine_data.div(cuisine_data.sum(axis=1), axis=0)
 
         # Select top 5 cuisines, others combined as 'Not Top 5'
         top_cuisines = cuisine_proportion.sum().nlargest(5).index
         combined_cuisines = cuisine_proportion[top_cuisines].copy()
-        combined_cuisines['Not Top 5'] = cuisine_proportion.drop(top_cuisines, axis=1).sum(axis=1)
+        combined_cuisines["Not Top 5"] = cuisine_proportion.drop(
+            top_cuisines, axis=1
+        ).sum(axis=1)
 
         # Add the cuisine plot explicitly as the last plot
         last_ax = len(axes) - 1  # Explicitly assign the last axis
-        combined_cuisines.plot(kind='bar', stacked=True, ax=axes[last_ax])
+        combined_cuisines.plot(kind="bar", stacked=True, ax=axes[last_ax])
         axes[last_ax].set(xlabel=group_by_variable, ylabel="Proportion")
-        axes[last_ax].legend(title='Top Cuisines', bbox_to_anchor=(1, 1), loc='upper left')
-        axes[last_ax].set_xticklabels(axes[last_ax].get_xticklabels(), rotation=0, ha='center')
-
+        axes[last_ax].legend(
+            title="Top Cuisines", bbox_to_anchor=(1, 1), loc="upper left"
+        )
+        axes[last_ax].set_xticklabels(
+            axes[last_ax].get_xticklabels(), rotation=0, ha="center"
+        )
 
     # # Remove empty subplots
     # for ax in axes[len(variables_to_plot) + 1:]:
     #     fig.delaxes(ax)
 
     # Layout and display
-    plt.suptitle(f"Distribution of Variables by {group_by_variable.title()}", y=1.01, fontsize=16, weight='bold')
+    plt.suptitle(
+        f"Distribution of Variables by {group_by_variable.title()}",
+        y=1.01,
+        fontsize=16,
+        weight="bold",
+    )
     plt.tight_layout(rect=[0, 0, 1, 0.98])
     plt.show()
-    
-    
-#The following function will be used 4.3. Missing Values
-def plot_customer_distributions(df, age_column, spending_column, orders_column, vendor_column, product_column, color_palette):
+
+
+# The following function will be used 4.3. Missing Values
+def plot_customer_distributions(
+    df,
+    age_column,
+    spending_column,
+    orders_column,
+    vendor_column,
+    product_column,
+    color_palette,
+):
     """
     Plots distributions and relationships for customer data including age, spending, orders, vendors, and products.
 
@@ -128,17 +192,19 @@ def plot_customer_distributions(df, age_column, spending_column, orders_column, 
     """
     # Set seaborn style
     sns.set_theme()
-    sns.set_style('whitegrid')
-    sns.set_palette(color_palette) 
+    sns.set_style("whitegrid")
+    sns.set_palette(color_palette)
 
     # Create a new dataframe with age bins
-    spending_behavoiur = pd.DataFrame({
-        'age_group': pd.cut(
-            df[age_column], 
-            bins=range(15, 66, 10),  # Bins from 15 to 65 in 10-year increments
-            right=False  # Exclude the rightmost edge for bin intervals
-        )
-    })
+    spending_behavoiur = pd.DataFrame(
+        {
+            "age_group": pd.cut(
+                df[age_column],
+                bins=range(15, 66, 10),  # Bins from 15 to 65 in 10-year increments
+                right=False,  # Exclude the rightmost edge for bin intervals
+            )
+        }
+    )
 
     # Add other columns to the new dataframe
     spending_behavoiur[spending_column] = df[spending_column]
@@ -151,10 +217,10 @@ def plot_customer_distributions(df, age_column, spending_column, orders_column, 
 
     # Calculate the 95th percentiles
     percentiles = {
-        'spending': spending_behavoiur[spending_column].quantile(0.95),
-        'orders': spending_behavoiur[orders_column].quantile(0.95),
-        'vendor_count': spending_behavoiur[vendor_column].quantile(0.95),
-        'product_count': spending_behavoiur[product_column].quantile(0.95)
+        "spending": spending_behavoiur[spending_column].quantile(0.95),
+        "orders": spending_behavoiur[orders_column].quantile(0.95),
+        "vendor_count": spending_behavoiur[vendor_column].quantile(0.95),
+        "product_count": spending_behavoiur[product_column].quantile(0.95),
     }
 
     # Create a 3x3 grid of subplots
@@ -163,53 +229,70 @@ def plot_customer_distributions(df, age_column, spending_column, orders_column, 
     # Plot 1: Distribution of customer age
     sns.histplot(df[age_column], bins=10, kde=True, alpha=0.6, ax=axes[0, 0])
     median_age = df[age_column].median()
-    axes[0, 0].axvline(median_age, color='red', linestyle='--', linewidth=2, label=f'Median Age: {round(median_age)}')
-    axes[0, 0].set_title('Distribution of Customer Age', fontsize=16, weight='bold')
+    axes[0, 0].axvline(
+        median_age,
+        color="red",
+        linestyle="--",
+        linewidth=2,
+        label=f"Median Age: {round(median_age)}",
+    )
+    axes[0, 0].set_title("Distribution of Customer Age", fontsize=16, weight="bold")
     axes[0, 0].legend()
 
     # Plot 2: Customer age vs total spending
     sns.scatterplot(data=df, x=age_column, y=spending_column, alpha=0.6, ax=axes[0, 1])
-    axes[0, 1].set_title('Customer Age vs Total Spending', fontsize=16, weight='bold')
+    axes[0, 1].set_title("Customer Age vs Total Spending", fontsize=16, weight="bold")
 
     # Plot 3: Customer age vs total orders
     sns.scatterplot(data=df, x=age_column, y=orders_column, alpha=0.6, ax=axes[0, 2])
-    axes[0, 2].set_title('Customer Age vs Total Orders', fontsize=16, weight='bold')
+    axes[0, 2].set_title("Customer Age vs Total Orders", fontsize=16, weight="bold")
 
     # Plot 4: Distribution of spending grouped by age
-    sns.histplot(data=spending_behavoiur, x=spending_column, ax=axes[1, 0], bins=30, hue='age_group', kde=True)
-    axes[1, 0].set_title('Distribution of Total Spending by Age Group', fontsize=16, weight='bold')
+    sns.histplot(
+        data=spending_behavoiur,
+        x=spending_column,
+        ax=axes[1, 0],
+        bins=30,
+        hue="age_group",
+        kde=True,
+    )
+    axes[1, 0].set_title(
+        "Distribution of Total Spending by Age Group", fontsize=16, weight="bold"
+    )
 
     # Plot 5: Boxplot of spending by age
-    sns.boxplot(data=spending_behavoiur, x='age_group', y=spending_column, ax=axes[1, 1])
-    axes[1, 1].set_title('Spending by Age Group', fontsize=16, weight='bold')
-    axes[1, 1].set_ylim(-1, percentiles['spending'])
+    sns.boxplot(
+        data=spending_behavoiur, x="age_group", y=spending_column, ax=axes[1, 1]
+    )
+    axes[1, 1].set_title("Spending by Age Group", fontsize=16, weight="bold")
+    axes[1, 1].set_ylim(-1, percentiles["spending"])
 
     # Plot 6: Boxplot of orders by age
-    sns.boxplot(data=spending_behavoiur, x='age_group', y=orders_column, ax=axes[1, 2])
-    axes[1, 2].set_title('Orders by Age Group', fontsize=16, weight='bold')
-    axes[1, 2].set_ylim(-0.2, percentiles['orders'])
+    sns.boxplot(data=spending_behavoiur, x="age_group", y=orders_column, ax=axes[1, 2])
+    axes[1, 2].set_title("Orders by Age Group", fontsize=16, weight="bold")
+    axes[1, 2].set_ylim(-0.2, percentiles["orders"])
 
     # Plot 7: Boxplot of vendor count by age
-    sns.boxplot(data=spending_behavoiur, x='age_group', y=vendor_column, ax=axes[2, 0])
-    axes[2, 0].set_title('Vendor Count by Age Group', fontsize=16, weight='bold')
-    axes[2, 0].set_ylim(-0.2, percentiles['vendor_count'])
+    sns.boxplot(data=spending_behavoiur, x="age_group", y=vendor_column, ax=axes[2, 0])
+    axes[2, 0].set_title("Vendor Count by Age Group", fontsize=16, weight="bold")
+    axes[2, 0].set_ylim(-0.2, percentiles["vendor_count"])
 
     # Plot 8: Boxplot of product count by age
-    sns.boxplot(data=spending_behavoiur, x='age_group', y=product_column, ax=axes[2, 1])
-    axes[2, 1].set_title('Product Count by Age Group', fontsize=16, weight='bold')
-    axes[2, 1].set_ylim(-0.2, percentiles['product_count'])
+    sns.boxplot(data=spending_behavoiur, x="age_group", y=product_column, ax=axes[2, 1])
+    axes[2, 1].set_title("Product Count by Age Group", fontsize=16, weight="bold")
+    axes[2, 1].set_ylim(-0.2, percentiles["product_count"])
 
     # Remove empty subplot (last one in 3x3 grid)
     fig.delaxes(axes[2, 2])
 
     # Layout and display
-    plt.suptitle("Customer Data Distribution", y=1.01, fontsize=20, weight='bold')
+    plt.suptitle("Customer Data Distribution", y=1.01, fontsize=20, weight="bold")
     plt.tight_layout(rect=[0, 0, 1, 0.98])
     plt.show()
-    
 
-#The following function will be used in 4.5.3. CUI_Asian vs Chinese, Indian, Japanese, etc, 4-7. Correlation Matrix
-def plot_correlation_heatmap(dataframe, features, title, cmap='coolwarm'):
+
+# The following function will be used in 4.5.3. CUI_Asian vs Chinese, Indian, Japanese, etc, 4-7. Correlation Matrix
+def plot_correlation_heatmap(dataframe, features, title, cmap="coolwarm"):
     """
     Plots a heatmap for the correlation matrix of the specified features in the dataframe.
 
@@ -227,22 +310,26 @@ def plot_correlation_heatmap(dataframe, features, title, cmap='coolwarm'):
 
     # Set the seaborn theme
     sns.set_theme()
-    sns.set_style('whitegrid')
+    sns.set_style("whitegrid")
 
     # Plot the correlation matrix as a heatmap
     plt.figure(figsize=(10, 8))
-    sns.heatmap(correlation_matrix, 
-                mask=mask, 
-                annot=True, 
-                cmap=cmap, 
-                fmt=".2f", 
-                linewidths=0.5,  # Add lines between cells for clarity
-                linecolor='black',  # Color of the lines
-                cbar_kws={"shrink": .8})  # Adjust colorbar size
+    sns.heatmap(
+        correlation_matrix,
+        mask=mask,
+        annot=True,
+        cmap=cmap,
+        fmt=".2f",
+        linewidths=0.5,  # Add lines between cells for clarity
+        linecolor="black",  # Color of the lines
+        cbar_kws={"shrink": 0.8},
+    )  # Adjust colorbar size
 
     # Set labels and title
-    plt.title(title, fontsize=16, weight='bold')
-    plt.xticks(rotation=45, ha='right', fontsize=12)  # Rotate x labels for better readability
+    plt.title(title, fontsize=16, weight="bold")
+    plt.xticks(
+        rotation=45, ha="right", fontsize=12
+    )  # Rotate x labels for better readability
     plt.yticks(rotation=0, fontsize=12)  # Keep y labels horizontal
 
     # Adjust layout
@@ -252,21 +339,21 @@ def plot_correlation_heatmap(dataframe, features, title, cmap='coolwarm'):
     plt.show()
 
 
-#The following function will be used in 5. Feature Engineering
+# The following function will be used in 5. Feature Engineering
 def plot_distribution(
-    data, 
-    x, 
-    plot_type="count", 
-    title=None, 
-    xlabel=None, 
-    ylabel=None, 
-    kde=False, 
-    bins=None, 
-    xlim=None, 
-    show_counts=False, 
-    figsize=(8, 6), 
+    data,
+    x,
+    plot_type="count",
+    title=None,
+    xlabel=None,
+    ylabel=None,
+    kde=False,
+    bins=None,
+    xlim=None,
+    show_counts=False,
+    figsize=(8, 6),
     order=None,
-    color_palette=None
+    color_palette=None,
 ):
     """
     Plots a distribution with an optional parameter to show counts above bars.
@@ -286,10 +373,10 @@ def plot_distribution(
     order (list): Order for categorical variables (default: None).
     """
     # Set the figure size
-    sns.set_style('whitegrid')
+    sns.set_style("whitegrid")
     sns.set_palette(color_palette)
     plt.figure(figsize=figsize)
-    
+
     # Plot based on type
     if plot_type == "count":
         ax = sns.countplot(data=data, x=x, order=order)
@@ -297,44 +384,112 @@ def plot_distribution(
         ax = sns.histplot(data[x], kde=kde, bins=bins)
     else:
         raise ValueError("Invalid plot_type. Use 'count' or 'hist'.")
-    
+
     # Set the plot titles and labels
-    plt.title(title if title else f"Distribution of {x.title()}", fontsize=16, weight='bold')
+    plt.title(
+        title if title else f"Distribution of {x.title()}", fontsize=16, weight="bold"
+    )
     plt.xlabel(xlabel if xlabel else x.title())
     plt.ylabel(ylabel if ylabel else "Frequency")
-    
+
     # Set x-axis limits if provided
     if xlim:
         plt.xlim(xlim)
-    
+
     # Show counts above bars if enabled
     if show_counts:
         if plot_type == "count":
             for container in ax.containers:
-                ax.bar_label(container, label_type='edge', padding=3)
+                ax.bar_label(container, label_type="edge", padding=3)
         elif plot_type == "hist":
             for patch in ax.patches:
                 height = patch.get_height()
                 if height > 0:  # Only annotate bars with height > 0
                     ax.annotate(
-                        f'{int(height)}', 
-                        xy=(patch.get_x() + patch.get_width() / 2, height), 
+                        f"{int(height)}",
+                        xy=(patch.get_x() + patch.get_width() / 2, height),
                         xytext=(0, 5),  # Offset label position
-                        textcoords="offset points", 
-                        ha='center', 
-                        va='bottom'
+                        textcoords="offset points",
+                        ha="center",
+                        va="bottom",
                     )
-    
+
     # Display the plot
     plt.tight_layout()
     plt.show()
-    
 
-#The following function will be used in 6. Feature Selection
+
+# The following function will be used in 7. Outliers
+def plot_boxplots_iqr_outliers(
+    features, df, title, cols=5, figsize=(18, 12), sort_by="outliers"
+):
+    """
+    Plots boxplots for the given features and calculates outlier counts (and percentages),
+    sorted by the specified method (either by 'outliers' or 'alphabet').
+
+    Parameters:
+    features (list): List of feature names to plot.
+    df (DataFrame): DataFrame containing the features.
+    title (str): Title for the plot grid.
+    cols (int): Number of columns in the grid layout (default: 5).
+    figsize (tuple): Size of the figure (default: (18, 12)).
+    sort_by (str): Method to sort the plots. Use 'outliers' to sort by outlier percentage,
+                   or 'alphabet' to sort alphabetically (default: 'outliers').
+    """
+    # Calculate IQR outliers for each feature and their percentages
+    outlier_info = []
+    for feature in features:
+        q1 = df[feature].quantile(0.25)
+        q3 = df[feature].quantile(0.75)
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+        outliers = df[(df[feature] < lower_bound) | (df[feature] > upper_bound)]
+        outlier_count = len(outliers)
+        outlier_percentage = (outlier_count / len(df)) * 100
+        outlier_info.append((feature, outlier_count, outlier_percentage))
+
+    # Sort features based on the specified method
+    if sort_by == "outliers":
+        sorted_features = sorted(
+            outlier_info, key=lambda x: x[2], reverse=True
+        )  # Sort by outlier percentage
+    elif sort_by == "alphabet":
+        sorted_features = sorted(
+            outlier_info, key=lambda x: x[0]
+        )  # Sort alphabetically by feature name
+    else:
+        raise ValueError("Invalid value for 'sort_by'. Use 'outliers' or 'alphabet'.")
+
+    # Extract sorted feature names
+    sorted_feature_names = [item[0] for item in sorted_features]
+
+    # Calculate rows needed for the grid
+    rows = (len(sorted_feature_names) // cols) + (len(sorted_feature_names) % cols > 0)
+    fig, axes = plt.subplots(nrows=rows, ncols=cols, figsize=figsize)
+    axes = axes.flatten()
+
+    # Generate box plots for each feature
+    for i, (feature, outlier_count, outlier_percentage) in enumerate(sorted_features):
+        sns.boxplot(x=df[feature], ax=axes[i])
+        axes[i].set_title(f"Outliers: {outlier_count} ({outlier_percentage:.2f}%)")
+        axes[i].set_xlabel(feature)
+
+    # Hide any unused subplots
+    for j in range(i + 1, len(axes)):
+        axes[j].axis("off")
+
+    # Set a main title for the grid
+    plt.suptitle(title, fontsize=16, weight="bold", y=1.02)
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+
+# The following function will be used in 6. Feature Selection
 def plot_matrix(data, title="Correlation Matrix", threshold=0.5, figsize=(24, 16)):
     """
     Plot a heatmap of the correlation matrix with annotations based on a threshold.
-    
+
     Parameters:
         data (DataFrame): Correlation matrix to be visualized.
         title (str): Title of the plot.
@@ -357,8 +512,11 @@ def plot_matrix(data, title="Correlation Matrix", threshold=0.5, figsize=(24, 16
         mask=upper_triangle_mask,  # Apply mask
         annot=annot,  # Custom annotation
         fmt="",  # Avoid conflicting formats
-        vmin=-1, vmax=1, center=0,  # Adjust color scale
-        square=True, linewidths=0.5,  # Aesthetics
+        vmin=-1,
+        vmax=1,
+        center=0,  # Adjust color scale
+        square=True,
+        linewidths=0.5,  # Aesthetics
         cmap="PiYG",  # Colormap
     )
 
@@ -367,14 +525,6 @@ def plot_matrix(data, title="Correlation Matrix", threshold=0.5, figsize=(24, 16
 
     # Show plot
     plt.show()
-    
- 
-  
-  
-  
-  
-  
-    
 
 
 def get_ss(df, feats):
@@ -393,8 +543,8 @@ def get_ss(df, feats):
     """
     df_ = df[feats]
     ss = np.sum(df_.var() * (df_.count() - 1))
-    
-    return ss 
+
+    return ss
 
 
 def get_ssb(df, feats, label_col):
@@ -408,21 +558,20 @@ def get_ssb(df, feats, label_col):
     df (pandas.DataFrame): The input DataFrame containing the data.
     feats (list of str): A list of feature column names to be used in the calculation.
     label_col (str): The name of the column in the DataFrame that contains the group labels.
-    
+
     Returns
     float: The between-group sum of squares of the DataFrame.
     """
-    
+
     ssb_i = 0
     for i in np.unique(df[label_col]):
         df_ = df.loc[:, feats]
         X_ = df_.values
         X_k = df_.loc[df[label_col] == i].values
-        
-        ssb_i += (X_k.shape[0] * (np.square(X_k.mean(axis=0) - X_.mean(axis=0))) )
+
+        ssb_i += X_k.shape[0] * (np.square(X_k.mean(axis=0) - X_.mean(axis=0)))
 
     ssb = np.sum(ssb_i)
-    
 
     return ssb
 
@@ -439,12 +588,16 @@ def get_ssw(df, feats, label_col):
     Returns:
     float: The sum of squared within-cluster distances (SSW).
     """
-    feats_label = feats+[label_col]
+    feats_label = feats + [label_col]
 
-    df_k = df[feats_label].groupby(by=label_col).apply(lambda col: get_ss(col, feats), 
-                                                       include_groups=False)
+    df_k = (
+        df[feats_label]
+        .groupby(by=label_col)
+        .apply(lambda col: get_ss(col, feats), include_groups=False)
+    )
 
     return df_k.sum()
+
 
 def get_rsq(df, feats, label_col):
     """
@@ -459,46 +612,50 @@ def get_rsq(df, feats, label_col):
     float: The R-squared value, representing the proportion of variance explained by the clustering.
     """
 
-    df_sst_ = get_ss(df, feats)                 # get total sum of squares
-    df_ssw_ = get_ssw(df, feats, label_col)     # get ss within
-    df_ssb_ = df_sst_ - df_ssw_                 # get ss between
+    df_sst_ = get_ss(df, feats)  # get total sum of squares
+    df_ssw_ = get_ssw(df, feats, label_col)  # get ss within
+    df_ssb_ = df_sst_ - df_ssw_  # get ss between
 
-    # r2 = ssb/sst 
-    return (df_ssb_/df_sst_)
+    # r2 = ssb/sst
+    return df_ssb_ / df_sst_
 
 
 def get_r2_hc(df, link_method, max_nclus, min_nclus=1, dist="euclidean"):
     """This function computes the R2 for a set of cluster solutions given by the application of a hierarchical method.
-    The R2 is a measure of the homogenity of a cluster solution. It is based on SSt = SSw + SSb and R2 = SSb/SSt. 
-    
+    The R2 is a measure of the homogenity of a cluster solution. It is based on SSt = SSw + SSb and R2 = SSb/SSt.
+
     Parameters:
     df (DataFrame): Dataset to apply clustering
     link_method (str): either "ward", "complete", "average", "single"
     max_nclus (int): maximum number of clusters to compare the methods
     min_nclus (int): minimum number of clusters to compare the methods. Defaults to 1.
     dist (str): distance to use to compute the clustering solution. Must be a valid distance. Defaults to "euclidean".
-    
+
     Returns:
     ndarray: R2 values for the range of cluster solutions
     """
-    
+
     r2 = []  # where we will store the R2 metrics for each cluster solution
     feats = df.columns.tolist()
-    
-    for i in range(min_nclus, max_nclus+1):  # iterate over desired ncluster range
-        cluster = AgglomerativeClustering(n_clusters=i, metric=dist, linkage=link_method)
-        
-        #get cluster labels
-        hclabels = cluster.fit_predict(df) 
-        
+
+    for i in range(min_nclus, max_nclus + 1):  # iterate over desired ncluster range
+        cluster = AgglomerativeClustering(
+            n_clusters=i, metric=dist, linkage=link_method
+        )
+
+        # get cluster labels
+        hclabels = cluster.fit_predict(df)
+
         # concat df with labels
-        df_concat = pd.concat([df, pd.Series(hclabels, name='labels', index=df.index)], axis=1)  
-        
-        
+        df_concat = pd.concat(
+            [df, pd.Series(hclabels, name="labels", index=df.index)], axis=1
+        )
+
         # append the R2 of the given cluster solution
-        r2.append(get_rsq(df_concat, feats, 'labels'))
-        
+        r2.append(get_rsq(df_concat, feats, "labels"))
+
     return np.array(r2)
+
 
 # The following function will be used in 7. Data Normalization
 def scaled_dataframe(columns: list, df: pd.DataFrame) -> pd.DataFrame:
