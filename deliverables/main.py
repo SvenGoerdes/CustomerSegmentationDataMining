@@ -5,6 +5,7 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.preprocessing import StandardScaler
+from minisom import MiniSom
 
 """
 FUNCTIONS USED IN DM2425_Part2_10_01.ipynb
