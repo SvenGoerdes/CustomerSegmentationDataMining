@@ -1,16 +1,16 @@
 {
-    "Demographics": [
+    "demographics": [
         "customer_region",
         "customer_age",
         "city",
         "generation_encoded"
     ],
-    "Economic values": [
+    "economic_values": [
         "avg_order_value",
         "customer_age",
         "generation_encoded"
     ],
-    "Purchasing Habits": [
+    "purchasing_habits": [
         "first_order",
         "chain_orders_prop",
         "orders_dawn",
@@ -21,7 +21,7 @@
         "health_index",
         "weekend_to_weekday_ratio"
     ],
-    "Taste": [
+    "taste": [
         "prop_cui_asian",
         "prop_cui_beverages",
         "prop_cui_cafe",
@@ -42,7 +42,7 @@
         "main_dishes_spending",
         "snacks_beverages_spending"
     ],
-    "Categorical": [
+    "categorical": [
         "last_promo",
         "payment_method",
         "promo_used",
