@@ -670,6 +670,20 @@ def scaled_dataframe(columns: list, df: pd.DataFrame) -> pd.DataFrame:
     Returns:
     DataFrame: A DataFrame with the specified columns scaled.
     """
+        # Ensure columns is a list
+    if isinstance(columns, str):
+        columns = [columns]
+    
+    # from list to pandas index
+    if not isinstance(columns, pd.Index):
+        columns = pd.Index(columns)
+
+    # Check if all columns exist in the DataFrame
+    for col in columns:
+        if col not in df.columns:
+            raise ValueError(f"Column '{col}' not found in DataFrame")
+
+
     # Create a copy of the DataFrame
     df_scaled = df.copy()
 
@@ -677,6 +691,9 @@ def scaled_dataframe(columns: list, df: pd.DataFrame) -> pd.DataFrame:
     scaler = StandardScaler()
 
     # Fit and transform the data
-    df_scaled[columns] = scaler.fit_transform(df_scaled[columns])
+    df_scaled[columns + '_normalized'] = scaler.fit_transform(df_scaled[columns])
+
+    # drop columns with original values
+    df_scaled.drop(columns=columns, inplace=True)
 
     return df_scaled
