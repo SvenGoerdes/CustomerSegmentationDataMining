@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.preprocessing import StandardScaler
-from minisom import MiniSom
+# from minisom import MiniSom
 
 """
 FUNCTIONS USED IN DM2425_Part2_10_01.ipynb
@@ -292,52 +292,48 @@ def plot_customer_distributions(
     plt.show()
 
 
-# The following function will be used in 4.5.3. CUI_Asian vs Chinese, Indian, Japanese, etc, 4-7. Correlation Matrix
-def plot_correlation_heatmap(dataframe, features, title, cmap="coolwarm"):
+# The following function will be used in 4.5.3. CUI_Asian vs Chinese, Indian, Japanese, etc, 4-7. Correlation Matrix and 7. Feature Selecion
+def plot_matrix(data, title="Correlation Matrix", threshold=0.5, figsize=(24, 16)):
     """
-    Plots a heatmap for the correlation matrix of the specified features in the dataframe.
+    Plot a heatmap of the correlation matrix with annotations based on a threshold.
 
     Parameters:
-    dataframe (DataFrame): The input dataframe.
-    features (list): List of feature names for which the correlation matrix will be computed.
-    title (str): The title of the heatmap plot.
-    cmap (str): The colormap for the heatmap (default: 'coolwarm').
+        data (DataFrame): Correlation matrix to be visualized.
+        title (str): Title of the plot.
+        threshold (float): Minimum absolute value of correlations to annotate.
+        figsize (tuple): Figure size for the plot.
     """
-    # Create a correlation matrix
-    correlation_matrix = dataframe[features].corr()
+    # Annotate only values above the threshold
+    mask_annot = np.absolute(data.values) >= threshold
+    annot = np.where(mask_annot, np.round(data.values, 2), "")
 
     # Create a mask for the upper triangle
-    mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
+    upper_triangle_mask = np.triu(np.ones_like(data, dtype=bool))
 
-    # Set the seaborn theme
-    sns.set_theme()
-    sns.set_style("whitegrid")
+    # Prepare figure
+    plt.figure(figsize=figsize)
 
-    # Plot the correlation matrix as a heatmap
-    plt.figure(figsize=(10, 8))
+    # Plot heatmap
     sns.heatmap(
-        correlation_matrix,
-        mask=mask,
-        annot=True,
-        cmap=cmap,
-        fmt=".2f",
-        linewidths=0.5,  # Add lines between cells for clarity
-        linecolor="black",  # Color of the lines
-        cbar_kws={"shrink": 0.8},
-    )  # Adjust colorbar size
+        data=data,
+        mask=upper_triangle_mask,  # Apply mask
+        annot=annot,  # Custom annotation
+        fmt="",  # Avoid conflicting formats
+        vmin=-1,
+        vmax=1,
+        center=0,  # Adjust color scale
+        square=True,
+        linewidths=0.5,  # Aesthetics
+        cmap="PiYG",  # Colormap
+    )
 
-    # Set labels and title
+    # Set plot title
     plt.title(title, fontsize=16, weight="bold")
-    plt.xticks(
-        rotation=45, ha="right", fontsize=12
-    )  # Rotate x labels for better readability
-    plt.yticks(rotation=0, fontsize=12)  # Keep y labels horizontal
 
-    # Adjust layout
-    plt.tight_layout()
-
-    # Show the plot
+    # Show plot
     plt.show()
+
+
 
 
 # The following function will be used in 5. Feature Engineering
@@ -484,49 +480,6 @@ def plot_boxplots_iqr_outliers(
     plt.suptitle(title, fontsize=16, weight="bold", y=1.02)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
-
-
-# The following function will be used in 6. Feature Selection
-def plot_matrix(data, title="Correlation Matrix", threshold=0.5, figsize=(24, 16)):
-    """
-    Plot a heatmap of the correlation matrix with annotations based on a threshold.
-
-    Parameters:
-        data (DataFrame): Correlation matrix to be visualized.
-        title (str): Title of the plot.
-        threshold (float): Minimum absolute value of correlations to annotate.
-        figsize (tuple): Figure size for the plot.
-    """
-    # Annotate only values above the threshold
-    mask_annot = np.absolute(data.values) >= threshold
-    annot = np.where(mask_annot, np.round(data.values, 2), "")
-
-    # Create a mask for the upper triangle
-    upper_triangle_mask = np.triu(np.ones_like(data, dtype=bool))
-
-    # Prepare figure
-    plt.figure(figsize=figsize)
-
-    # Plot heatmap
-    sns.heatmap(
-        data=data,
-        mask=upper_triangle_mask,  # Apply mask
-        annot=annot,  # Custom annotation
-        fmt="",  # Avoid conflicting formats
-        vmin=-1,
-        vmax=1,
-        center=0,  # Adjust color scale
-        square=True,
-        linewidths=0.5,  # Aesthetics
-        cmap="PiYG",  # Colormap
-    )
-
-    # Set plot title
-    plt.title(title, fontsize=16, weight="bold")
-
-    # Show plot
-    plt.show()
-
 
 def get_ss(df, feats):
     """
