@@ -5,7 +5,7 @@ import pandas as pd
 import numpy as np
 from sklearn.cluster import AgglomerativeClustering
 from sklearn.preprocessing import StandardScaler
-# from minisom import MiniSom
+from minisom import MiniSom
 
 """
 FUNCTIONS USED IN DM2425_Part2_10_01.ipynb
@@ -481,6 +481,51 @@ def plot_boxplots_iqr_outliers(
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
 
+
+"""
+FUNCTIONS USED IN DM2425_Part2_10_02.ipynb
+"""
+# The following function will be used in 7. Data Normalization
+def scaled_dataframe(columns: list, df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Scales the specified columns in the DataFrame using StandardScaler.
+
+    Parameters:
+    columns (list): List of column names to scale.
+    df (DataFrame): DataFrame containing the columns to scale.
+
+    Returns:
+    DataFrame: A DataFrame with the specified columns scaled.
+    """
+        # Ensure columns is a list
+    if isinstance(columns, str):
+        columns = [columns]
+    
+    # from list to pandas index
+    if not isinstance(columns, pd.Index):
+        columns = pd.Index(columns)
+
+    # Check if all columns exist in the DataFrame
+    for col in columns:
+        if col not in df.columns:
+            raise ValueError(f"Column '{col}' not found in DataFrame")
+
+
+    # Create a copy of the DataFrame
+    df_scaled = df.copy()
+
+    # Initialize the StandardScaler
+    scaler = StandardScaler()
+
+    # Fit and transform the data
+    df_scaled[columns + '_normalized'] = scaler.fit_transform(df_scaled[columns])
+
+    # drop columns with original values
+    df_scaled.drop(columns=columns, inplace=True)
+
+    return df_scaled
+
+
 def get_ss(df, feats):
     """
     Calculate the sum of squares (SS) for the given DataFrame.
@@ -609,44 +654,3 @@ def get_r2_hc(df, link_method, max_nclus, min_nclus=1, dist="euclidean"):
         r2.append(get_rsq(df_concat, feats, "labels"))
 
     return np.array(r2)
-
-
-# The following function will be used in 7. Data Normalization
-def scaled_dataframe(columns: list, df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Scales the specified columns in the DataFrame using StandardScaler.
-
-    Parameters:
-    columns (list): List of column names to scale.
-    df (DataFrame): DataFrame containing the columns to scale.
-
-    Returns:
-    DataFrame: A DataFrame with the specified columns scaled.
-    """
-        # Ensure columns is a list
-    if isinstance(columns, str):
-        columns = [columns]
-    
-    # from list to pandas index
-    if not isinstance(columns, pd.Index):
-        columns = pd.Index(columns)
-
-    # Check if all columns exist in the DataFrame
-    for col in columns:
-        if col not in df.columns:
-            raise ValueError(f"Column '{col}' not found in DataFrame")
-
-
-    # Create a copy of the DataFrame
-    df_scaled = df.copy()
-
-    # Initialize the StandardScaler
-    scaler = StandardScaler()
-
-    # Fit and transform the data
-    df_scaled[columns + '_normalized'] = scaler.fit_transform(df_scaled[columns])
-
-    # drop columns with original values
-    df_scaled.drop(columns=columns, inplace=True)
-
-    return df_scaled

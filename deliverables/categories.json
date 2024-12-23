@@ -7,8 +7,7 @@
     ],
     "economic_values": [
         "avg_order_value",
-        "customer_age",
-        "generation_encoded"
+        "customer_age"
     ],
     "purchasing_habits": [
         "first_order",
@@ -18,7 +17,6 @@
         "orders_afternoon",
         "orders_evening",
         "order_recency",
-        "health_index",
         "weekend_to_weekday_ratio"
     ],
     "taste": [
