@@ -292,52 +292,48 @@ def plot_customer_distributions(
     plt.show()
 
 
-# The following function will be used in 4.5.3. CUI_Asian vs Chinese, Indian, Japanese, etc, 4-7. Correlation Matrix
-def plot_correlation_heatmap(dataframe, features, title, cmap="coolwarm"):
+# The following function will be used in 4.5.3. CUI_Asian vs Chinese, Indian, Japanese, etc, 4-7. Correlation Matrix and 7. Feature Selecion
+def plot_matrix(data, title="Correlation Matrix", threshold=0.5, figsize=(24, 16)):
     """
-    Plots a heatmap for the correlation matrix of the specified features in the dataframe.
+    Plot a heatmap of the correlation matrix with annotations based on a threshold.
 
     Parameters:
-    dataframe (DataFrame): The input dataframe.
-    features (list): List of feature names for which the correlation matrix will be computed.
-    title (str): The title of the heatmap plot.
-    cmap (str): The colormap for the heatmap (default: 'coolwarm').
+        data (DataFrame): Correlation matrix to be visualized.
+        title (str): Title of the plot.
+        threshold (float): Minimum absolute value of correlations to annotate.
+        figsize (tuple): Figure size for the plot.
     """
-    # Create a correlation matrix
-    correlation_matrix = dataframe[features].corr()
+    # Annotate only values above the threshold
+    mask_annot = np.absolute(data.values) >= threshold
+    annot = np.where(mask_annot, np.round(data.values, 2), "")
 
     # Create a mask for the upper triangle
-    mask = np.triu(np.ones_like(correlation_matrix, dtype=bool))
+    upper_triangle_mask = np.triu(np.ones_like(data, dtype=bool))
 
-    # Set the seaborn theme
-    sns.set_theme()
-    sns.set_style("whitegrid")
+    # Prepare figure
+    plt.figure(figsize=figsize)
 
-    # Plot the correlation matrix as a heatmap
-    plt.figure(figsize=(10, 8))
+    # Plot heatmap
     sns.heatmap(
-        correlation_matrix,
-        mask=mask,
-        annot=True,
-        cmap=cmap,
-        fmt=".2f",
-        linewidths=0.5,  # Add lines between cells for clarity
-        linecolor="black",  # Color of the lines
-        cbar_kws={"shrink": 0.8},
-    )  # Adjust colorbar size
+        data=data,
+        mask=upper_triangle_mask,  # Apply mask
+        annot=annot,  # Custom annotation
+        fmt="",  # Avoid conflicting formats
+        vmin=-1,
+        vmax=1,
+        center=0,  # Adjust color scale
+        square=True,
+        linewidths=0.5,  # Aesthetics
+        cmap="PiYG",  # Colormap
+    )
 
-    # Set labels and title
+    # Set plot title
     plt.title(title, fontsize=16, weight="bold")
-    plt.xticks(
-        rotation=45, ha="right", fontsize=12
-    )  # Rotate x labels for better readability
-    plt.yticks(rotation=0, fontsize=12)  # Keep y labels horizontal
 
-    # Adjust layout
-    plt.tight_layout()
-
-    # Show the plot
+    # Show plot
     plt.show()
+
+
 
 
 # The following function will be used in 5. Feature Engineering
@@ -486,46 +482,48 @@ def plot_boxplots_iqr_outliers(
     plt.show()
 
 
-# The following function will be used in 6. Feature Selection
-def plot_matrix(data, title="Correlation Matrix", threshold=0.5, figsize=(24, 16)):
+"""
+FUNCTIONS USED IN DM2425_Part2_10_02.ipynb
+"""
+# The following function will be used in 7. Data Normalization
+def scaled_dataframe(columns: list, df: pd.DataFrame) -> pd.DataFrame:
     """
-    Plot a heatmap of the correlation matrix with annotations based on a threshold.
+    Scales the specified columns in the DataFrame using StandardScaler.
 
     Parameters:
-        data (DataFrame): Correlation matrix to be visualized.
-        title (str): Title of the plot.
-        threshold (float): Minimum absolute value of correlations to annotate.
-        figsize (tuple): Figure size for the plot.
+    columns (list): List of column names to scale.
+    df (DataFrame): DataFrame containing the columns to scale.
+
+    Returns:
+    DataFrame: A DataFrame with the specified columns scaled.
     """
-    # Annotate only values above the threshold
-    mask_annot = np.absolute(data.values) >= threshold
-    annot = np.where(mask_annot, np.round(data.values, 2), "")
+        # Ensure columns is a list
+    if isinstance(columns, str):
+        columns = [columns]
+    
+    # from list to pandas index
+    if not isinstance(columns, pd.Index):
+        columns = pd.Index(columns)
 
-    # Create a mask for the upper triangle
-    upper_triangle_mask = np.triu(np.ones_like(data, dtype=bool))
+    # Check if all columns exist in the DataFrame
+    for col in columns:
+        if col not in df.columns:
+            raise ValueError(f"Column '{col}' not found in DataFrame")
 
-    # Prepare figure
-    plt.figure(figsize=figsize)
 
-    # Plot heatmap
-    sns.heatmap(
-        data=data,
-        mask=upper_triangle_mask,  # Apply mask
-        annot=annot,  # Custom annotation
-        fmt="",  # Avoid conflicting formats
-        vmin=-1,
-        vmax=1,
-        center=0,  # Adjust color scale
-        square=True,
-        linewidths=0.5,  # Aesthetics
-        cmap="PiYG",  # Colormap
-    )
+    # Create a copy of the DataFrame
+    df_scaled = df.copy()
 
-    # Set plot title
-    plt.title(title, fontsize=16, weight="bold")
+    # Initialize the StandardScaler
+    scaler = StandardScaler()
 
-    # Show plot
-    plt.show()
+    # Fit and transform the data
+    df_scaled[columns + '_normalized'] = scaler.fit_transform(df_scaled[columns])
+
+    # drop columns with original values
+    df_scaled.drop(columns=columns, inplace=True)
+
+    return df_scaled
 
 
 def get_ss(df, feats):
@@ -656,44 +654,3 @@ def get_r2_hc(df, link_method, max_nclus, min_nclus=1, dist="euclidean"):
         r2.append(get_rsq(df_concat, feats, "labels"))
 
     return np.array(r2)
-
-
-# The following function will be used in 7. Data Normalization
-def scaled_dataframe(columns: list, df: pd.DataFrame) -> pd.DataFrame:
-    """
-    Scales the specified columns in the DataFrame using StandardScaler.
-
-    Parameters:
-    columns (list): List of column names to scale.
-    df (DataFrame): DataFrame containing the columns to scale.
-
-    Returns:
-    DataFrame: A DataFrame with the specified columns scaled.
-    """
-        # Ensure columns is a list
-    if isinstance(columns, str):
-        columns = [columns]
-    
-    # from list to pandas index
-    if not isinstance(columns, pd.Index):
-        columns = pd.Index(columns)
-
-    # Check if all columns exist in the DataFrame
-    for col in columns:
-        if col not in df.columns:
-            raise ValueError(f"Column '{col}' not found in DataFrame")
-
-
-    # Create a copy of the DataFrame
-    df_scaled = df.copy()
-
-    # Initialize the StandardScaler
-    scaler = StandardScaler()
-
-    # Fit and transform the data
-    df_scaled[columns + '_normalized'] = scaler.fit_transform(df_scaled[columns])
-
-    # drop columns with original values
-    df_scaled.drop(columns=columns, inplace=True)
-
-    return df_scaled
