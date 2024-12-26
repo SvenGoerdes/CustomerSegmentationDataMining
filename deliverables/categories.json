@@ -2,11 +2,9 @@
     "demographics": [
         "customer_region",
         "customer_age",
-        "city",
-        "generation_encoded"
+        "city"
     ],
     "economic_values": [
-        "avg_order_value",
         "customer_age"
     ],
     "purchasing_habits": [
