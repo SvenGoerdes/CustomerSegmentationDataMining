@@ -483,7 +483,7 @@ def plot_boxplots_iqr_outliers(
 
 
 """
-FUNCTIONS USED IN DM2425_Part2_10_02.ipynb
+FUNCTIONS USED IN DM2425_Part2_10_02.ipynb, DM2425_Part2_10_03.ipynb
 """
 # The following function will be used in 7. Data Normalization
 def scaled_dataframe(columns: list, df: pd.DataFrame) -> pd.DataFrame:
