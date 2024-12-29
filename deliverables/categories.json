@@ -2,7 +2,8 @@
     "demographics": [
         "customer_region",
         "customer_age",
-        "city"
+        "city",
+        "generation_encoded"
     ],
     "economic_values": [
         "customer_age"
@@ -18,6 +19,7 @@
         "weekend_to_weekday_ratio"
     ],
     "taste": [
+        "prop_cui_asian",
         "prop_cui_cafe",
         "prop_cui_chicken dishes",
         "prop_cui_chinese",
@@ -27,9 +29,8 @@
         "prop_cui_other",
         "prop_cui_street food / snacks",
         "prop_cui_thai",
-        "health_index",
-        "cui_asian_spending",
-        "cui_western_spending"
+        "prop_cui_western",
+        "health_index"
     ],
     "categorical": [
         "last_promo",
