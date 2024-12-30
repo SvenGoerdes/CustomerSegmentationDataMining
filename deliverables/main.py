@@ -654,3 +654,42 @@ def get_r2_hc(df, link_method, max_nclus, min_nclus=1, dist="euclidean"):
         r2.append(get_rsq(df_concat, feats, "labels"))
 
     return np.array(r2)
+
+
+# function that assigns the cluster labels from the nodes to the corresponding datapoints.
+def data_labels_som(df, features, M, N, sm, node_weights, node_labels):
+    """
+    This function returns cluster labels array based on the data points from the SOM grid. 
+
+    Parameters:
+        df (pd.DataFrame): The dataset containing the features for SOM training.
+        features (list): List of feature column names to be used for training.
+        M (int): Number of rows in the SOM grid.
+        N (int): Number of columns in the SOM grid.
+        sm (Mini Som): Trained MiniSom instance.
+        node_weights (np.array): Weights of the nodes as a 2D array.
+        node_labels (np.array): Cluster labels assigned to the nodes.
+
+    Returns:
+        np.array: Cluster labels assigned to the data points based on the SOM grid.
+
+    
+    """
+
+    # get the labels out of the prediction
+    nodeclus_labels = kmeans.fit_predict(weights_flat)
+
+    # create a dataframe out of the node weights and their cluster label
+    df_nodes = pd.DataFrame(node_weights, columns = features)
+    df_nodes['label'] = node_labels
+
+
+    ## This gets BMU nodes, e.g. (4,4) for each data point
+    bmu_index = np.array([sm.winner(x) for x in df[features].values])
+    
+    # get the cluster label for each data point
+    kmeans_matrix = nodeclus_labels.reshape((M,N))
+
+    som_final_labels = [kmeans_matrix[i[0]][i[1]] for i in bmu_index]
+
+    return som_final_labels
