@@ -483,7 +483,7 @@ def plot_boxplots_iqr_outliers(
 
 
 """
-FUNCTIONS USED IN DM2425_Part2_10_02.ipynb, DM2425_Part2_10_03.ipynb
+FUNCTIONS USED IN DM2425_Part2_10_02.ipynb
 """
 # The following function will be used in 7. Data Normalization
 def scaled_dataframe(columns: list, df: pd.DataFrame) -> pd.DataFrame:
@@ -655,7 +655,6 @@ def get_r2_hc(df, link_method, max_nclus, min_nclus=1, dist="euclidean"):
 
     return np.array(r2)
 
-
 # function that assigns the cluster labels from the nodes to the corresponding datapoints.
 def data_labels_som(df, features, M, N, sm, node_weights, node_labels):
     """
@@ -691,4 +690,121 @@ def data_labels_som(df, features, M, N, sm, node_weights, node_labels):
 
     return som_final_labels
 
+def plot_cluster_means_and_frequencies(cluster_means_2, cluster_frequencies_2, 
+                                       cluster_means_3, cluster_frequencies_3):
+    """
+    Plots cluster means as separate subplots for each solution and cluster frequencies as a bar chart.
+    """
+    features = cluster_means_2.columns  # Feature names
 
+    # Create a figure with 3 subplots (2 for line charts, 1 for bar chart)
+    fig, axs = plt.subplots(1, 3, figsize=(18, 6), gridspec_kw={'width_ratios': [1, 1, 1.2]})
+    
+    # Plot means for 2-cluster solution
+    for cluster in cluster_means_2.index:
+        axs[0].plot(features, cluster_means_2.loc[cluster], marker='o', label=f"Cluster {cluster}")
+    axs[0].set_title("Cluster Means: 2-Cluster Solution")
+    axs[0].set_xlabel("Features")
+    axs[0].set_ylabel("Standardized Feature Mean")
+    axs[0].grid(True)
+    axs[0].legend(title="Clusters", loc='best', bbox_to_anchor=(1, 1))
+
+    # Plot means for 3-cluster solution
+    for cluster in cluster_means_3.index:
+        axs[1].plot(features, cluster_means_3.loc[cluster], marker='o', label=f"Cluster {cluster}")
+    axs[1].set_title("Cluster Means: 3-Cluster Solution")
+    axs[1].set_xlabel("Features")
+    axs[1].set_ylabel("Standardized Feature Mean")
+    axs[1].grid(True)
+    axs[1].legend(title="Clusters", loc='best', bbox_to_anchor=(1, 1))
+
+    # Set shared x-axis labels for line charts
+    for ax in axs[:2]:
+        ax.set_xticks(range(len(features)))
+        ax.set_xticklabels(features, rotation=45, ha='right')
+
+    # Bar chart for cluster frequencies
+    all_clusters = sorted(set(cluster_frequencies_2.keys()) | set(cluster_frequencies_3.keys()))
+    bar_positions = np.arange(len(all_clusters))  # Positions for clusters
+    bar_width = 0.4
+
+    # Frequencies aligned with all_clusters
+    frequencies_2 = [cluster_frequencies_2.get(cluster, 0) for cluster in all_clusters]
+    frequencies_3 = [cluster_frequencies_3.get(cluster, 0) for cluster in all_clusters]
+
+    # Plot frequencies
+    bars_2 = axs[2].bar(bar_positions - bar_width / 2, frequencies_2, bar_width, label="2-Cluster Solution")
+    bars_3 = axs[2].bar(bar_positions + bar_width / 2, frequencies_3, bar_width, label="3-Cluster Solution")
+
+    # Add labels on top of bars
+    for bar in bars_2:
+        height = bar.get_height()
+        axs[2].text(bar.get_x() + bar.get_width() / 2, height + 0.5, f"{int(height)}", ha='center', va='bottom')
+
+    for bar in bars_3:
+        height = bar.get_height()
+        axs[2].text(bar.get_x() + bar.get_width() / 2, height + 0.5, f"{int(height)}", ha='center', va='bottom')
+
+    # X-axis labels for bar chart
+    axs[2].set_xticks(bar_positions)
+    axs[2].set_xticklabels([f"Cluster {cluster}" for cluster in all_clusters], rotation=45)
+    axs[2].set_title("Cluster Frequencies: 2 and 3-Cluster Solutions")
+    axs[2].set_xlabel("Clusters")
+    axs[2].set_ylabel("Frequency")
+    axs[2].legend(title="Solution", loc='best', bbox_to_anchor=(1, 1))
+    axs[2].grid(True)
+
+    # Adjust layout and show
+    plt.tight_layout()
+    plt.show()
+
+def plot_dim_reduction(df_concat, label_column):
+    """
+    Plots t-SNE, UMAP, and PCA visualizations side by side with transparency in the dots.
+
+    Parameters:
+    df_concat (pd.DataFrame): DataFrame containing the features and cluster labels.
+    label_column (str): Name of the column containing the cluster labels.
+    """
+    # Extract features and labels
+    features = df_concat.drop(columns=[label_column])
+    labels = df_concat[label_column]
+
+    # Perform dimensionality reductions
+    tsne_result = TSNE(random_state=42).fit_transform(features)
+    umap_result = umap.UMAP(random_state=42).fit_transform(features)
+    pca_result = PCA(n_components=2, random_state=42).fit_transform(features)
+
+    # Create a figure with 3 subplots
+    fig, axes = plt.subplots(1, 3, figsize=(18, 6), sharex=False, sharey=False)
+
+    # t-SNE Visualization with transparency
+    sns.scatterplot(
+        x=tsne_result[:, 0], y=tsne_result[:, 1], hue=labels, palette='tab10',
+        ax=axes[0], legend='full', alpha=0.5
+    )
+    axes[0].set_title("t-SNE Visualization")
+    axes[0].set_xlabel("Component 1")
+    axes[0].set_ylabel("Component 2")
+
+    # UMAP Visualization with transparency
+    sns.scatterplot(
+        x=umap_result[:, 0], y=umap_result[:, 1], hue=labels, palette='tab10',
+        ax=axes[1], legend=None, alpha=0.5
+    )
+    axes[1].set_title("UMAP Visualization")
+    axes[1].set_xlabel("Component 1")
+    axes[1].set_ylabel("Component 2")
+
+    # PCA Visualization with transparency
+    sns.scatterplot(
+        x=pca_result[:, 0], y=pca_result[:, 1], hue=labels, palette='tab10',
+        ax=axes[2], legend=None, alpha=0.5
+    )
+    axes[2].set_title("PCA Visualization")
+    axes[2].set_xlabel("Principal Component 1")
+    axes[2].set_ylabel("Principal Component 2")
+
+    # Adjust layout and show
+    plt.tight_layout()
+    plt.show()
