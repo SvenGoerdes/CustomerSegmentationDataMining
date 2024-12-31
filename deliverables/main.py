@@ -677,19 +677,18 @@ def data_labels_som(df, features, M, N, sm, node_weights, node_labels):
     """
 
     # get the labels out of the prediction
-    nodeclus_labels = kmeans.fit_predict(weights_flat)
 
     # create a dataframe out of the node weights and their cluster label
-    df_nodes = pd.DataFrame(node_weights, columns = features)
-    df_nodes['label'] = node_labels
 
 
     ## This gets BMU nodes, e.g. (4,4) for each data point
     bmu_index = np.array([sm.winner(x) for x in df[features].values])
     
     # get the cluster label for each data point
-    kmeans_matrix = nodeclus_labels.reshape((M,N))
+    kmeans_matrix = node_labels.reshape((M,N))
 
     som_final_labels = [kmeans_matrix[i[0]][i[1]] for i in bmu_index]
 
     return som_final_labels
+
+
