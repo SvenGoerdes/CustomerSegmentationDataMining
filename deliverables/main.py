@@ -481,6 +481,21 @@ def plot_boxplots_iqr_outliers(
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
 
+def plot_horizontal_boxplots(data, columns_titles):
+    """
+    Plots horizontal box plots for the specified columns.
+    
+    Parameters:
+        data (DataFrame): The DataFrame containing the data.
+        columns_titles (list of tuples): A list of tuples where each tuple contains
+                                          the column name and the corresponding plot title.
+    """
+    for column, title in columns_titles:
+        plt.figure(figsize=(8, 6))
+        sns.boxplot(x=data[column])
+        plt.title(f"Box Plot of {title}")
+        plt.xlabel(title)
+        plt.show()
 
 """
 FUNCTIONS USED IN DM2425_Part2_10_02.ipynb
