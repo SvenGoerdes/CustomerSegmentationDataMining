@@ -11,7 +11,6 @@ from minisom import MiniSom
 FUNCTIONS USED IN DM2425_Part2_10_01.ipynb
 """
 
-
 # The following function will be used 4.3. Missing Values
 def plot_grouped_distributions(
     df, group_by_variable, color_palette, exclude_prefixes=["CUI", "DOW", "HR"]
@@ -335,8 +334,7 @@ def plot_matrix(data, title="Correlation Matrix", threshold=0.5, figsize=(24, 16
 
 
 
-
-# The following function will be used in 5. Feature Engineering
+# The following functions will be used in 5. Feature Engineering
 def plot_distribution(
     data,
     x,
@@ -416,6 +414,114 @@ def plot_distribution(
     plt.show()
 
 
+def plot_boxplots(df, column_label_pairs, figsize=(12, 8), cols=3):
+    """
+    Plots side-by-side boxplots for specified columns in the dataframe.
+    
+    Args:
+        df (pd.DataFrame): Dataframe containing the data.
+        column_label_pairs (list of tuples): List of tuples where each tuple contains:
+            - The column name (str).
+            - The x-axis label for the plot (str).
+        figsize (tuple): Overall figure size for the plots.
+        cols (int): Number of columns of plots in the grid.
+    """
+    if len(column_label_pairs) == 1:
+        # If only one feature, create a single boxplot
+        col, label = column_label_pairs[0]
+        plt.figure(figsize=(8, 6))
+        sns.boxplot(x=df[col])
+        plt.title(label)
+        plt.xlabel("Value")
+        plt.ylabel("")
+        plt.show()
+    else:
+        # For multiple features, create a grid
+        rows = (len(column_label_pairs) + cols - 1) // cols  # Calculate the number of rows
+        fig, axes = plt.subplots(rows, cols, figsize=figsize, constrained_layout=True)
+        axes = axes.flatten()  # Flatten the axes array for easy iteration
+
+        for i, (col, label) in enumerate(column_label_pairs):
+            sns.boxplot(x=df[col], ax=axes[i])
+            axes[i].set_title(label)
+            axes[i].set_xlabel("Value")
+            axes[i].set_ylabel("")
+        
+        # Hide unused subplots if columns < total slots
+        for j in range(len(column_label_pairs), len(axes)):
+            axes[j].axis("off")
+        
+        plt.show()
+    
+def plot_scatter(data, pairs, xlim=None):
+    """
+    Plots scatter plots for given pairs of columns.
+
+    Parameters:
+    - data: DataFrame containing the data.
+    - pairs: List of tuples with (x_column, y_column, title).
+    - xlim: Tuple specifying the limits for the x-axis (optional).
+    """
+    for x_col, y_col, title in pairs:
+        plt.figure(figsize=(8, 6))
+        sns.scatterplot(x=x_col, y=y_col, data=data)
+        plt.title(title)
+        plt.xlabel(f"{x_col.replace('_', ' ').title()}")
+        plt.ylabel(f"{y_col.replace('_', ' ').title()}")
+        if xlim:
+            plt.xlim(xlim)
+        plt.show()
+        
+
+def plot_kde_plots(df, column_label_pairs, figsize=(14, 10), cols=3, xlim=None, row_spacing=1.0, col_spacing=0.5):
+    """
+    Plots KDE plots for specified columns in the dataframe, either individually or side-by-side in a grid.
+    
+    Args:
+        df (pd.DataFrame): Dataframe containing the data.
+        column_label_pairs (list of tuples): List of tuples where each tuple contains:
+            - The column name (str).
+            - The x-axis label for the plot (str).
+        figsize (tuple): Overall figure size for the grid layout.
+        cols (int): Number of columns for the grid layout.
+        xlim (tuple): Range for the x-axis, e.g., (0, 1). Default is None (automatic scaling).
+        row_spacing (float): Space between rows in the grid.
+        col_spacing (float): Space between columns in the grid.
+    """
+    if len(column_label_pairs) == 1:
+        # Single KDE plot
+        col, label = column_label_pairs[0]
+        plt.figure(figsize=figsize)
+        sns.kdeplot(df[col], fill=True)
+        plt.title(f"KDE Plot of {label}")
+        plt.xlabel(label)
+        plt.ylabel("Density")
+        if xlim:
+            plt.xlim(xlim)
+        plt.show()
+    else:
+        # Grid of KDE plots
+        rows = (len(column_label_pairs) + cols - 1) // cols  # Calculate number of rows
+        fig, axes = plt.subplots(
+            rows, cols, figsize=figsize,
+            gridspec_kw={"hspace": row_spacing, "wspace": col_spacing}  # Adjust spacing
+        )
+        axes = axes.flatten()  # Flatten axes for easy iteration
+
+        for i, (col, label) in enumerate(column_label_pairs):
+            sns.kdeplot(df[col], fill=True, ax=axes[i])
+            axes[i].set_title(f"KDE Plot of {label}")
+            axes[i].set_xlabel(label)
+            axes[i].set_ylabel("Density")
+            if xlim:
+                axes[i].set_xlim(xlim)
+        
+        # Hide unused subplots if columns < total slots
+        for j in range(len(column_label_pairs), len(axes)):
+            axes[j].axis("off")
+        
+        plt.show()
+
 # The following function will be used in 7. Outliers
 def plot_boxplots_iqr_outliers(
     features, df, title, cols=5, figsize=(18, 12), sort_by="outliers"
@@ -480,22 +586,6 @@ def plot_boxplots_iqr_outliers(
     plt.suptitle(title, fontsize=16, weight="bold", y=1.02)
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
-
-def plot_horizontal_boxplots(data, columns_titles):
-    """
-    Plots horizontal box plots for the specified columns.
-    
-    Parameters:
-        data (DataFrame): The DataFrame containing the data.
-        columns_titles (list of tuples): A list of tuples where each tuple contains
-                                          the column name and the corresponding plot title.
-    """
-    for column, title in columns_titles:
-        plt.figure(figsize=(8, 6))
-        sns.boxplot(x=data[column])
-        plt.title(f"Box Plot of {title}")
-        plt.xlabel(title)
-        plt.show()
 
 """
 FUNCTIONS USED IN DM2425_Part2_10_02.ipynb
