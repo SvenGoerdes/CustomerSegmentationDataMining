@@ -7,6 +7,11 @@ from sklearn.cluster import AgglomerativeClustering
 from sklearn.preprocessing import StandardScaler
 from minisom import MiniSom
 
+#Visualizing the data
+from sklearn.manifold import TSNE
+import umap
+from sklearn.decomposition import PCA
+
 """
 FUNCTIONS USED IN DM2425_Part2_10_01.ipynb
 """
@@ -861,6 +866,93 @@ def plot_cluster_means_and_frequencies(cluster_means_2, cluster_frequencies_2,
 
     # Adjust layout and show
     plt.tight_layout()
+    plt.show()
+
+def plot_demographics_distribution(df, value_col, cluster_col = 'merged_labels', title=None, figsize=(16, 4)):
+    """
+    Creates a grid of count plots for a categorical variable across all clusters,
+    including an overall count plot for the entire dataset.
+
+    Parameters:
+    df (pd.DataFrame): Input DataFrame containing the data.
+    cluster_col (str): Column name representing the cluster labels.
+    value_col (str): Column name representing the categorical variable to plot.
+    title (str): Title of the entire figure. Defaults to None.
+    figsize (tuple): Size of the overall figure. Defaults to (16, 4).
+
+    Returns:
+    None
+    """
+    # Determine the number of unique clusters
+    num_clusters = df[cluster_col].nunique()
+
+    # Create a subplot grid (1 row, number of clusters + 1 columns)
+    fig, axes = plt.subplots(1, num_clusters + 1, figsize=figsize, tight_layout=True)
+
+    # Iterate over all subplots
+    for i, ax in enumerate(axes.flatten()):
+        if i == 0:
+            # Plot for all data
+            sns.countplot(
+                data=df,
+                x=value_col,
+                order=df[value_col].value_counts().index,
+                ax=ax
+            )
+            ax.set_title("All Data")
+        else:
+            # Plot for individual clusters
+            cluster_data = df[df[cluster_col] == i - 1]
+            sns.countplot(
+                data=cluster_data,
+                x=value_col,
+                order=df[value_col].value_counts().index,
+                ax=ax
+            )
+            ax.set_title(f"Cluster {i - 1}")
+
+        # Rotate x-axis labels for readability
+        ax.tick_params(axis="x", labelrotation=90)
+        ax.set_xlabel("")
+        ax.set_ylabel("")
+
+    # Add a title for the entire figure
+    plt.suptitle(title if title else f"{value_col.title()} Distribution Across Clusters", fontsize=16)
+    plt.show()
+
+def plot_demographics_relative_distribution(df, value_col, cluster_col = 'merged_labels',  title=None, colormap='tab10'):
+    """
+    Plots a stacked bar chart showing the relative distribution of categorical values
+    for each cluster.
+
+    Parameters:
+    df (pd.DataFrame): Input DataFrame containing the data.
+    cluster_col (str): Column name representing the cluster labels.
+    value_col (str): Column name representing the categorical variable to be visualized.
+    title (str): Title of the plot. Defaults to None.
+    colormap (str): Colormap to use for the plot. Defaults to 'tab10'.
+
+    Returns:
+    None
+    """
+    # Group by cluster and the value column, then count occurrences
+    grouped_data = df.groupby([cluster_col, value_col])[value_col].size().unstack()
+
+    # Normalize to get relative distributions (percentages)
+    normalized_data = grouped_data.div(grouped_data.sum(axis=1), axis=0)
+
+    # Plot the stacked bar chart
+    ax = normalized_data.plot.bar(stacked=True, figsize=(10, 6), colormap=colormap)
+
+    # Add labels and title
+    plot_title = title if title else f'Relative Distribution of {value_col.title()} by {cluster_col.title()}'
+    plt.title(plot_title, fontsize=14)
+    plt.xlabel(cluster_col.replace('_', ' ').title(), fontsize=12)
+    plt.ylabel('Proportion', fontsize=12)
+    plt.legend(title=value_col.replace('_', ' ').title(), bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+
+    # Display the plot
     plt.show()
 
 def plot_dim_reduction(df_concat, label_column):
