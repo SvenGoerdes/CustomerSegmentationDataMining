@@ -6,3 +6,4 @@ poetry.lock
 pyproject.toml
 deliverables/SomIteration.ipynb
 /Dashboard
+/deliverables/cluster_with_log_transform.ipynb
