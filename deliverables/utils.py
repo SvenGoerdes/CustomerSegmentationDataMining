@@ -328,7 +328,7 @@ def plot_matrix(data, title="Correlation Matrix", threshold=0.5, figsize=(24, 16
         center=0,  # Adjust color scale
         square=True,
         linewidths=0.5,  # Aesthetics
-        cmap="PiYG",  # Colormap
+        cmap="YlGnBu",  # Colormap
     )
 
     # Set plot title
