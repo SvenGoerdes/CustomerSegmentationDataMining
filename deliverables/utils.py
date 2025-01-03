@@ -707,6 +707,14 @@ def get_ssw(df, feats, label_col):
 
     return df_k.sum()
 
+def get_ssw_with_medoids(df, feats, medoids, label_col):
+    ssw = 0
+    for medoid, cluster_id in zip(medoids, df[label_col].unique()):
+        cluster_points = df[df[label_col] == cluster_id][feats].values
+        distances = np.sum(np.square(cluster_points - medoid), axis=1)
+        ssw += distances.sum()
+    return ssw
+
 
 def get_rsq(df, feats, label_col):
     """
@@ -726,6 +734,31 @@ def get_rsq(df, feats, label_col):
     df_ssb_ = df_sst_ - df_ssw_  # get ss between
 
     # r2 = ssb/sst
+    return df_ssb_ / df_sst_
+
+def get_rsq_with_medoids(df, feats, label_col, medoids):
+    """
+    Calculate the R-squared value for k-medoids clustering using medoids.
+
+    Parameters:
+    df (pandas.DataFrame): The input DataFrame containing the data.
+    feats (list): A list of feature column names to be used in the calculation.
+    label_col (str): The name of the column containing the cluster labels.
+    medoids (numpy.ndarray): Array of medoids for each cluster (shape: [n_clusters, n_features]).
+
+    Returns:
+    float: The R-squared value, representing the proportion of variance explained by the clustering.
+    """
+    # Total sum of squares (SSt)
+    df_sst_ = get_ss(df, feats)
+
+    # Within-cluster sum of squares (SSw) using medoids
+    df_ssw_ = get_ssw_with_medoids(df, feats, medoids, label_col)
+
+    # Between-cluster sum of squares (SSb)
+    df_ssb_ = df_sst_ - df_ssw_
+
+    # Calculate R^2
     return df_ssb_ / df_sst_
 
 
