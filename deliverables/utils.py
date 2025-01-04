@@ -1161,3 +1161,55 @@ def plot_demographics_distribution(df, value_col, cluster_col = 'merged_labels',
     # Add a title for the entire figure
     plt.suptitle(title if title else f"{value_col.title()} Distribution Across Clusters", fontsize=16)
     plt.show()
+
+def plot_radar(grouped_means, title="Radar Plot", figsize=(10, 10), rotation=45):
+    """
+    Plots a radar chart for grouped data, excluding the 'Overall_Avg' column.
+
+    Parameters:
+    - grouped_means: DataFrame containing the data to be plotted. Rows should be categories, and columns should be cluster means.
+    - title: Title of the plot (default: "Radar Plot").
+    - figsize: Tuple specifying the size of the figure (default: (10, 10)).
+    - rotation: Angle for category labels rotation (default: 45).
+    """
+    # Exclude 'Overall_Avg' column if present
+    if 'Overall_Avg' in grouped_means.columns:
+        grouped_means = grouped_means.drop(columns=['Overall_Avg'])
+    
+    # Number of categories
+    categories = grouped_means.index.tolist()
+    num_categories = len(categories)
+    
+    # Compute angles for each category
+    angles = np.linspace(0, 2 * np.pi, num_categories, endpoint=False).tolist()
+    angles += angles[:1]  # Close the circle
+    
+    # Initialize the plot
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw=dict(polar=True))
+    
+    # Plot each cluster
+    for column in grouped_means.columns:
+        values = grouped_means[column].tolist()
+        values += values[:1]  # Close the plot
+        ax.plot(angles, values, linewidth=2, label=column)
+        ax.fill(angles, values, alpha=0.2)
+    
+    # Add labels for each category with adjusted rotation
+    ax.set_xticks(angles[:-1])
+    ax.set_xticklabels(categories, fontsize=9, rotation=rotation, ha='center', va='center')
+    
+    # Set y-ticks and gridlines
+    max_value = grouped_means.max().max()
+    step = max_value / 5
+    y_ticks = np.arange(step, max_value + step, step)
+    ax.set_yticks(y_ticks)
+    ax.set_yticklabels([f'{x:.1f}' for x in y_ticks], color='gray', fontsize=8)
+    ax.grid(True)
+    
+    # Add title and legend
+    plt.title(title, size=16, y=1.1)
+    plt.legend(loc='upper right', bbox_to_anchor=(1.3, 1.1), fontsize=10)
+    
+    # Show the plot
+    plt.tight_layout()
+    plt.show()
