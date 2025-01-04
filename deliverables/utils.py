@@ -953,6 +953,42 @@ def plot_demographics_distribution(df, value_col, cluster_col = 'merged_labels',
     plt.suptitle(title if title else f"{value_col.title()} Distribution Across Clusters", fontsize=16)
     plt.show()
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+def plot_customer_age_distribution(df, cluster_col='merged_labels'):
+    """
+    Creates individual distribution plots for `customer_age` for each `merged_label`.
+
+    Parameters:
+    df (pd.DataFrame): Input DataFrame containing the data.
+    cluster_col (str): Column name representing the cluster labels.
+
+    Returns:
+    None
+    """
+    # Iterate over each unique cluster label
+    for cluster in sorted(df[cluster_col].unique()):
+        cluster_data = df[df[cluster_col] == cluster]
+        plt.figure(figsize=(8, 5))
+        sns.histplot(
+            data=cluster_data,
+            x='customer_age',
+            kde=True,  # Add KDE for smoother distribution visualization
+            bins=2,   # Adjust number of bins as needed
+            color='blue'
+        )
+        plt.title(f"Customer Age Distribution - Cluster {cluster}")
+        plt.xlabel("Customer Age")
+        plt.ylabel("Frequency")
+        plt.grid(axis='y', linestyle='--', alpha=0.7)
+        plt.show()
+
+
+
 def plot_demographics_relative_distribution(df, value_col, cluster_col = 'merged_labels',  title=None, colormap='tab10'):
     """
     Plots a stacked bar chart showing the relative distribution of categorical values
