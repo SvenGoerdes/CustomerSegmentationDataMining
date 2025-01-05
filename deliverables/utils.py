@@ -799,7 +799,7 @@ def get_r2_hc(df, link_method, max_nclus, min_nclus=1, dist="euclidean"):
     return np.array(r2)
 
 # function that assigns the cluster labels from the nodes to the corresponding datapoints.
-def data_labels_som(df, features, M, N, sm, node_weights, node_labels):
+def cluster_labels_som(df, features, M, N, sm, node_weights, node_labels):
     """
     This function returns cluster labels array based on the data points from the SOM grid. 
 
@@ -833,81 +833,69 @@ def data_labels_som(df, features, M, N, sm, node_weights, node_labels):
 
     return som_final_labels
 
-def plot_cluster_means_and_frequencies(cluster_means_2, cluster_frequencies_2, 
-                                       cluster_means_3, cluster_frequencies_3):
+def plot_cluster_means_and_frequencies(*solutions):
     """
     Plots cluster means as separate subplots for each solution and cluster frequencies as a bar chart.
-    """
-    features = cluster_means_2.columns  # Feature names
-
-    # Create a figure with 3 subplots (2 for line charts, 1 for bar chart)
-    fig, axs = plt.subplots(1, 3, figsize=(18, 6), gridspec_kw={'width_ratios': [1, 1, 1.2]})
     
-    # Plot means for 2-cluster solution
-    for cluster in cluster_means_2.index:
-        axs[0].plot(features, cluster_means_2.loc[cluster], marker='o', label=f"Cluster {cluster}")
-    axs[0].set_title("Cluster Means: 2-Cluster Solution")
-    axs[0].set_xlabel("Features")
-    axs[0].set_ylabel("Standardized Feature Mean")
-    axs[0].grid(True)
-    axs[0].legend(title="Clusters", loc='best', bbox_to_anchor=(1, 1))
+    Parameters:
+        solutions (tuple): Each solution is a tuple of (cluster_means, cluster_frequencies),
+                           where cluster_means is a DataFrame and cluster_frequencies is a dictionary.
+                           The solutions should be provided in the desired order of plotting.
+    """
+    num_solutions = len(solutions)
+    cluster_means_list = [sol[0] for sol in solutions]
+    cluster_frequencies_list = [sol[1] for sol in solutions]
+    
+    # Ensure all solutions share the same feature set
+    features = cluster_means_list[0].columns
 
-    # Plot means for 3-cluster solution
-    for cluster in cluster_means_3.index:
-        axs[1].plot(features, cluster_means_3.loc[cluster], marker='o', label=f"Cluster {cluster}")
-    axs[1].set_title("Cluster Means: 3-Cluster Solution")
-    axs[1].set_xlabel("Features")
-    axs[1].set_ylabel("Standardized Feature Mean")
-    axs[1].grid(True)
-    axs[1].legend(title="Clusters", loc='best', bbox_to_anchor=(1, 1))
-
-    # Set shared x-axis labels for line charts
-    for ax in axs[:2]:
-        ax.set_xticks(range(len(features)))
-        ax.set_xticklabels(features, rotation=45, ha='right')
+    # Create a figure with subplots: one for each cluster means and one for the bar chart
+    fig, axs = plt.subplots(1, num_solutions + 1, 
+                            figsize=(6 * (num_solutions + 1), 6), 
+                            gridspec_kw={'width_ratios': [1] * num_solutions + [1.5]})
+    
+    # Plot cluster means for each solution
+    for i, cluster_means in enumerate(cluster_means_list):
+        for cluster in cluster_means.index:
+            axs[i].plot(features, cluster_means.loc[cluster], marker='o', label=f"Cluster {cluster}")
+        axs[i].set_title(f"Cluster Means: Solution {i + 1}")
+        axs[i].set_xlabel("Features")
+        axs[i].set_ylabel("Standardized Feature Mean")
+        axs[i].grid(True)
+        axs[i].legend(title="Clusters", loc='best', bbox_to_anchor=(1, 1))
+        
+        # Set shared x-axis labels for line charts
+        axs[i].set_xticks(range(len(features)))
+        axs[i].set_xticklabels(features, rotation=45, ha='right')
 
     # Bar chart for cluster frequencies
-    all_clusters = sorted(set(cluster_frequencies_2.keys()) | set(cluster_frequencies_3.keys()))
+    all_clusters = sorted(set().union(*[freq.keys() for freq in cluster_frequencies_list]))
     bar_positions = np.arange(len(all_clusters))  # Positions for clusters
-    bar_width = 0.4
+    bar_width = 0.8 / num_solutions  # Dynamic bar width based on the number of solutions
 
-    # Frequencies aligned with all_clusters
-    frequencies_2 = [cluster_frequencies_2.get(cluster, 0) for cluster in all_clusters]
-    frequencies_3 = [cluster_frequencies_3.get(cluster, 0) for cluster in all_clusters]
-
-    # Plot frequencies
-    bars_2 = axs[2].bar(bar_positions - bar_width / 2, frequencies_2, bar_width, label="2-Cluster Solution")
-    bars_3 = axs[2].bar(bar_positions + bar_width / 2, frequencies_3, bar_width, label="3-Cluster Solution")
-
-    # Add labels on top of bars
-    for bar in bars_2:
-        height = bar.get_height()
-        axs[2].text(bar.get_x() + bar.get_width() / 2, height + 0.5, f"{int(height)}", ha='center', va='bottom')
-
-    for bar in bars_3:
-        height = bar.get_height()
-        axs[2].text(bar.get_x() + bar.get_width() / 2, height + 0.5, f"{int(height)}", ha='center', va='bottom')
+    # Plot frequencies for each solution
+    for i, cluster_frequencies in enumerate(cluster_frequencies_list):
+        frequencies = [cluster_frequencies.get(cluster, 0) for cluster in all_clusters]
+        bars = axs[-1].bar(bar_positions + (i - num_solutions / 2) * bar_width, 
+                           frequencies, bar_width, label=f"Solution {i + 1}")
+        
+        # Add labels on top of bars
+        for bar in bars:
+            height = bar.get_height()
+            axs[-1].text(bar.get_x() + bar.get_width() / 2, height + 0.5, f"{int(height)}", ha='center', va='bottom')
 
     # X-axis labels for bar chart
-    axs[2].set_xticks(bar_positions)
-    axs[2].set_xticklabels([f"Cluster {cluster}" for cluster in all_clusters], rotation=45)
-    axs[2].set_title("Cluster Frequencies: 2 and 3-Cluster Solutions")
-    axs[2].set_xlabel("Clusters")
-    axs[2].set_ylabel("Frequency")
-    axs[2].legend(title="Solution", loc='best', bbox_to_anchor=(1, 1))
-    axs[2].grid(True)
+    axs[-1].set_xticks(bar_positions)
+    axs[-1].set_xticklabels([f"Cluster {cluster}" for cluster in all_clusters], rotation=45)
+    axs[-1].set_title("Cluster Frequencies")
+    axs[-1].set_xlabel("Clusters")
+    axs[-1].set_ylabel("Frequency")
+    axs[-1].legend(title="Solution", loc='best', bbox_to_anchor=(1, 1))
+    axs[-1].grid(True)
 
     # Adjust layout and show
     plt.tight_layout()
     plt.show()
-
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-
-import seaborn as sns
-import matplotlib.pyplot as plt
-
 
 def plot_dim_reduction(df_concat, label_column):
     """
