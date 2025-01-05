@@ -1213,3 +1213,46 @@ def plot_radar(grouped_means, title="Radar Plot", figsize=(10, 10), rotation=45)
     # Show the plot
     plt.tight_layout()
     plt.show()
+    
+def plot_simple_boxplots(df, features, x_col="merged_labels", figsize=(8, 6)):
+    """
+    Plots boxplots for the specified features against a given x-column.
+    
+    Args:
+        df (pd.DataFrame): The dataframe containing the data.
+        features (list of str): List of feature names for the y-axis.
+        x_col (str): The column name for the x-axis (default is "merged_labels").
+        figsize (tuple): Figure size for each plot.
+    """
+    for feature in features:
+        plt.figure(figsize=figsize)
+        sns.boxplot(x=x_col, y=feature, data=df)
+        plt.title(f"{feature} vs {x_col}")
+        plt.xlabel("Cluster Labels")
+        plt.ylabel(feature)
+        plt.show()
+
+def plot_cluster_heatmap(df, features, groupby_column='merged_labels', figsize=(15, 15), cmap="BrBG"):
+    """
+    Generates a heatmap of mean values for specified features grouped by a column.
+    
+    Args:
+        df (pd.DataFrame): Dataframe containing the data.
+        features (list): List of feature names to plot in the heatmap.
+        groupby_column (str): Column name to group by (default is 'merged_labels').
+        figsize (tuple): Size of the plot (default is (15, 15)).
+        cmap (str): Color map to use for the heatmap (default is "BrBG").
+    """
+    # Group by the specified column and calculate the mean for the selected features
+    km_profile = df.groupby(groupby_column).mean(numeric_only=True)[features].T
+
+    # Create the plot
+    fig, ax = plt.subplots(figsize=figsize)
+
+    sns.heatmap(km_profile,
+                center=0, annot=True, cmap=cmap, fmt=".2f",
+                ax=ax)
+
+    ax.set_xlabel("Merged Cluster Labels")
+    ax.set_title(f"Customer Segmentations by KMeans Clustering")
+    plt.show()
