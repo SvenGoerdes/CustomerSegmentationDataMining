@@ -2,23 +2,33 @@ from dash import Dash, dash_table, dcc, callback, Output, Input, html
 import pandas as pd
 import plotly.express as px
 import dash_mantine_components as dmc
+import json
 
 # ------------------------------------------------------------------
 # 1) Load and prepare data
 # ------------------------------------------------------------------
-df = pd.read_csv('../Data/DM2425_ABCDEats_DATASET.csv')
+
 df_clust = pd.read_csv('../Data/df_clustering_non_standardized_mergedlabel.csv')
 
 # Numeric columns, ignoring CUI/DOW/HR columns (example from your code)
-metric_features = df.select_dtypes(include=['number']).columns.tolist()
-cui_columns = df.filter(like="CUI_").columns.tolist()
-dow_columns = df.filter(like="DOW_").columns.tolist()
-hr_columns = df.filter(like="HR_").columns.tolist()
+# metric_features = df.select_dtypes(include=['number']).columns.tolist()
+# cui_columns = df.filter(like="CUI_").columns.tolist()
+# dow_columns = df.filter(like="DOW_").columns.tolist()
+# hr_columns = df.filter(like="HR_").columns.tolist()
 
-metric_features_excluding_cui_dow_and_hr = [
-    feat for feat in metric_features
-    if feat not in cui_columns + dow_columns + hr_columns
-]
+with open('initial_perspectives.json') as f:
+    initial_perspective = json.load(f)
+
+cust_col = initial_perspective['customer_behavior']
+cui_col = initial_perspective['cuisine_preferences']
+demogr_col = initial_perspective['demographics']
+
+
+metric_features = cust_col + cust_col
+# metric_features_excluding_cui_dow_and_hr = [
+#     feat for feat in metric_features
+#     if feat not in cui_columns + dow_columns + hr_columns
+# ]
 
 # Cuisine columns (relative spending)
 prop_cui_cols = [col for col in df_clust.columns if col.startswith('prop_cui')]
@@ -26,7 +36,7 @@ prop_cui_cols = [col for col in df_clust.columns if col.startswith('prop_cui')]
 # Melt DF for box plots
 df_cui_melted = df_clust.melt(
     id_vars=['merged_labels_name'],
-    value_vars=prop_cui_cols,
+    value_vars=cui_col,
     var_name='cuisine',
     value_name='proportion'
 )
@@ -77,16 +87,16 @@ app.layout = dmc.Container(
         dmc.Text("Select the two columns for the scatterplot:", size="md", weight=600
                  , id = "select-columns"),
         dcc.Dropdown(
-            options=metric_features_excluding_cui_dow_and_hr,
-            value=metric_features_excluding_cui_dow_and_hr[0],
+            options=metric_features,
+            value=metric_features[0],
             id='controls-and-dropdown-1',
             className='dash-dropdown',
             style={'marginBottom': '10px', 'width': '250px'}
         ),
 
         dcc.Dropdown(
-            options=metric_features_excluding_cui_dow_and_hr,
-            value=metric_features_excluding_cui_dow_and_hr[1],
+            options=metric_features,
+            value=metric_features[1],
             id='controls-and-dropdown-2',
             className='dash-dropdown',
             style={'marginBottom': '20px', 'width': '250px'}
