@@ -1,0 +1,52 @@
+{
+    "customer_behavior": [
+        "prop_chain_orders",
+        "prop_weekend_orders",
+        "prop_weekday_orders",
+        "prop_orders_dawn",
+        "prop_orders_morning",
+        "prop_orders_afternoon",
+        "prop_orders_evening",
+        "first_order",
+        "last_order",
+        "order_recency",
+        "product_count",
+        "vendor_count",
+        "total_cui_spending",
+        "total_orders",
+        "avg_daily_orders",
+        "avg_order_value",
+        "products_per_vendor"
+    ],
+    "cuisine_preferences": [
+        "prop_cui_american",
+        "prop_cui_asian",
+        "prop_cui_beverages",
+        "prop_cui_cafe",
+        "prop_cui_chicken dishes",
+        "prop_cui_chinese",
+        "prop_cui_desserts",
+        "prop_cui_healthy",
+        "prop_cui_indian",
+        "prop_cui_italian",
+        "prop_cui_japanese",
+        "prop_cui_noodle dishes",
+        "prop_cui_other",
+        "prop_cui_street food / snacks",
+        "prop_cui_thai",
+        "prop_cui_asian_origin",
+        "prop_cui_western",
+        "prop_cui_other_origin",
+        "prop_cui_main_dishes",
+        "prop_cui_snacks_beverages"
+    ],
+    "demographics": [
+        "customer_region",
+        "city",
+        "generation",
+        "customer_age",
+        "last_promo",
+        "payment_method",
+        "promo_used"
+    ]
+}
