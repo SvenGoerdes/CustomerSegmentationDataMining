@@ -43,7 +43,7 @@ df_cui_melted = df_clust.melt(
     value_name='proportion'
 )
 
-# Tab-to-cluster mapping
+# Tab-to-cluster mapping (for everything except the metadata tab & "all individuals" tab)
 cluster_map = {
     'tab-1-example-graph': 'The Chain Enthusiasts',
     'tab-2-example-graph': 'The Indian Food Lovers',
@@ -71,7 +71,8 @@ app.layout = dmc.Container(
         dmc.Title("Choose the Cluster:", color='#000000', size="h4"),
         dcc.Tabs(
             id="tabs-example-graph",
-            value='tab-1-example-graph',
+            # value='tab-1-example-graph',
+            value='metadata-overview',
             children=[
                 dcc.Tab(label='Metadata Overview', value='metadata-overview'),
                 dcc.Tab(label='The Chain Enthusiasts', value='tab-1-example-graph'),
@@ -87,7 +88,98 @@ app.layout = dmc.Container(
 
         html.Br(),
 
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # A) METADATA OVERVIEW SECTION
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        html.Div(
+            id='metadata-overview-content',
+            style={'display': 'none'},  # hidden by default
+            children=[
+                # A nice heading
+                dmc.Title("Metadata: Overview", color="blue", size="h2"),
+                html.Hr(),
+                # Short introduction about the metadata and dataset. The dataset contains about 31236 rows and 44 columns. The original columns have been preprocessed and transformed into 
+                # relative proportions, which are used for clustering. The dataset contains information about customer behavior, cuisine preferences, and demographics.
+                # 
 
+                html.B(
+                    'The dataset contains about 31236 rows and 44 columns. '
+                    'Some of the original columns have been preprocessed and transformed into relative proportions, '
+                    'which are used for clustering and for the dashboard. The dataset information/columns can be splitted into customer behavior, '
+                    'cuisine preferences, and demographics. '
+                    'Additionally, we have added the outliers back into the dataset for the dashboard. We used the nearest centroid to assign the cluster label to the outliers.'
+
+
+                ),
+
+                html.Br(),
+                html.Br(),
+                html.Br(),
+                html.B('The following sections provide an overview of the columns in the dataset:'),
+                html.Br(),
+                html.Hr(),
+
+                html.Br(),
+                html.Br(),
+                # make a empty paragaphr
+
+
+                # Customer Behavior columns
+                html.H3("Customer Behavior Columns"),
+                # add a short text about the metadata of the customer behaviour columns
+                # html.P('This is some text about the metadata of the behaviour columns'),
+                # html.Ul([html.Li(col) for col in cust_col]),
+
+                html.P('The behaviour columns are defined as following.'),
+
+                html.Ul([
+                html.Li("prop_chain_orders — The share of total orders placed at chain restaurants."),
+                html.Li("prop_weekend_orders — The proportion of orders on weekends (Sat/Sun)."),
+                html.Li("prop_weekday_orders — The proportion of orders on weekdays (Mon–Fri)."),
+                html.Li("prop_orders_dawn — Fraction of orders during dawn hours."),
+                html.Li("prop_orders_morning — Fraction of orders in the morning."),
+                html.Li("prop_orders_afternoon — Fraction of orders in the afternoon."),
+                html.Li("prop_orders_evening — Fraction of orders in the evening."),
+                html.Li("first_order — A number indicating when the first order was. A 0 indicates at the start of the observation period."),
+                html.Li("last_order — A number indicating when the last order was. A 90 indicates at the end of the observation period"),
+                html.Li("order_recency — Time elapsed since the last order in the A 90 days timeframe of the dataset."),
+                html.Li("product_count — How many distinct products the customer has purchased."),
+                html.Li("vendor_count — How many different vendors the customer has used."),
+                html.Li("total_cui_spending — The total amount spent (across all cuisine orders)."),
+                html.Li("total_orders — The total number of orders the customer has made."),
+                html.Li("avg_daily_orders — Average orders per day, showing overall ordering frequency."),
+                html.Li("avg_order_value — Average monetary value per order."),
+                html.Li("products_per_vendor — Average distinct products purchased per vendor."),
+                ]),
+                # Cuisine columns
+                html.H3("Cuisine Preferences Columns"),
+                html.P('''The following columns specify how often a customer orders a certain cuisine. The values are in proportion to the total number of orders.
+                        As an example: if a customer orders 10 times in total and 3 times Indian food, the value in the column "prop_orders_indian" would be 0.3.'''),
+                # The columns can be overlapping. For example 
+                # html.H5('As an example: if a customer orders 10 times in total and 3 times Indian food, the value in the column "prop_orders_indian" would be 0.3.'),
+
+                html.Ul([html.Li(col) for col in cui_col]),
+
+                html.Br(),
+
+                # Demographics columns
+                html.H3("Demographics Columns"),
+                html.Ul([
+                    html.Li("customer_region — The geographic region where the customer resides."),
+                    html.Li("city — The city where the customer resides. Represented as an int."),
+                    html.Li("generation — The customer’s generational group (e.g., Gen-Z, Millennial)."),
+                    html.Li("customer_age — The numerical age of the customer."),
+                    html.Li("last_promo — Details of the most recent promo the customer used."),
+                    html.Li("payment_method — The method used by the customer to pay for orders."),
+                    html.Li("promo_used — A binary indicating whether the customer used a promotional offer."),
+                ]),
+
+            ]
+        ),
+
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # B) REMAINDER OF LAYOUT (PLOTS)
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Cuisine Section
         dmc.Title("Cuisine Preferences", color="blue", size="h2"),
         html.Hr(),
@@ -146,7 +238,6 @@ app.layout = dmc.Container(
         # Behavior Section
         dmc.Title("Behavior", color="blue", size="h2"),
         html.Hr(),
-
         dmc.Text("Choose a behavior column to see its distribution:", size="md", weight=600),
         dcc.Dropdown(
             options=cust_col,   # all behavior columns from your JSON
@@ -181,7 +272,24 @@ app.layout = dmc.Container(
 )
 
 # ------------------------------------------------------------------
-# 4) Callback: Return 9 figures total
+# 4) A) Callback to SHOW/HIDE Metadata tab
+# ------------------------------------------------------------------
+@callback(
+    Output('metadata-overview-content', 'style'),
+    Input('tabs-example-graph', 'value')
+)
+def toggle_metadata_overview(selected_tab):
+    """
+    If 'metadata-overview' is selected, we show the metadata.
+    Otherwise, we hide it.
+    """
+    if selected_tab == 'metadata-overview':
+        return {'display': 'block', 'marginBottom': '20px'}
+    else:
+        return {'display': 'none'}
+
+# ------------------------------------------------------------------
+# 4) B) Callback: Return 9 figures for the other tabs
 # ------------------------------------------------------------------
 @callback(
     Output('controls-and-graph', 'figure'),
@@ -189,8 +297,8 @@ app.layout = dmc.Container(
     Output('barplot-region', 'figure'),
     Output('barplot-generation', 'figure'),
     Output('barplot-payment-method', 'figure'),
-    Output('behavior-hist', 'figure'),
     Output('behavior-mean-prop', 'figure'),
+    Output('behavior-hist', 'figure'),
     Output('behavior-time-of-day', 'figure'),
     Output('behavior-weekend', 'figure'),
     Input('controls-and-dropdown-1', 'value'),
@@ -212,12 +320,13 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
       8) Time-of-Day Bar Plot (average of 4 columns)
       9) Weekend/Weekday Bar Plot (average of 2 columns)
     """
+    # If the user is on the "Metadata Overview" tab, just return 9 empty figures:
+    if active_tab == 'metadata-overview':
+        empty_fig = px.scatter(title="(No Plot Shown - Metadata Tab)")
+        return (empty_fig, empty_fig, empty_fig, empty_fig, empty_fig,
+                empty_fig, empty_fig, empty_fig, empty_fig)
 
-    # if active_tab == 'metadata-overview':
-
-
-
-    # Decide which cluster data to filter
+    # ~~~~~~~~~~~ Decide which cluster data to filter ~~~~~~~~~~~
     if active_tab == 'tab-7-example-graph':
         df_filtered = df_clust.copy()
         cluster_title = "All Individuals"
@@ -226,18 +335,18 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         df_filtered = df_clust[df_clust['merged_labels_name'] == cluster_name].copy()
         cluster_title = cluster_name
 
+    # ~~~~~~~~~~~ 1) Scatter Plot ~~~~~~~~~~~
     if active_tab == 'tab-7-example-graph':
-       fig_scatter = px.scatter(
-          df_filtered,
-         x=col_chosen_1,
-         y=col_chosen_2,
-        height=700,
-        color='merged_labels_name', 
-        title=f'Scatter: {col_chosen_1} vs. {col_chosen_2} — {cluster_title}'
-    )
+        # color by cluster if "All Individuals"
+        fig_scatter = px.scatter(
+            df_filtered,
+            x=col_chosen_1,
+            y=col_chosen_2,
+            height=700,
+            color='merged_labels_name',
+            title=f'Scatter: {col_chosen_1} vs. {col_chosen_2} — {cluster_title}'
+        )
     else:
-
-    # ~~~ 1) Scatter Plot ~~~
         fig_scatter = px.scatter(
             df_filtered,
             x=col_chosen_1,
@@ -247,7 +356,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         )
         fig_scatter.update_traces(marker_color="rgba(0, 0, 150, 0.5)")
 
-    # ~~~ 2) Box Plot: Cuisine ~~~
+    # ~~~~~~~~~~~ 2) Box Plot: Cuisine ~~~~~~~~~~~
     if active_tab == 'tab-7-example-graph':
         df_cui_filtered = df_cui_melted.copy()
     else:
@@ -264,7 +373,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     fig_box.update_xaxes(tickangle=45)
     fig_box.update_traces(marker_color="rgba(0, 0, 150, 0.5)")
 
-    # ~~~ Helper for relative percentages in demographics ~~~
+    # Helper for relative percentages in demographics
     def to_percentages(local_df, col):
         temp = (
             local_df
@@ -277,7 +386,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         temp['percentage'] = temp['count'] / total_count * 100 if total_count > 0 else 0
         return temp
 
-    # ~~~ 3) Bar Plot: customer_region ~~~
+    # ~~~~~~~~~~~ 3) Bar Plot: customer_region ~~~~~~~~~~~
     df_region_count = to_percentages(df_filtered, 'customer_region')
     fig_region = px.bar(
         df_region_count,
@@ -293,7 +402,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         textposition='outside'
     )
 
-    # ~~~ 4) Bar Plot: generation ~~~
+    # ~~~~~~~~~~~ 4) Bar Plot: generation ~~~~~~~~~~~
     df_gen_count = to_percentages(df_filtered, 'generation')
     fig_generation = px.bar(
         df_gen_count,
@@ -309,7 +418,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         textposition='outside'
     )
 
-    # ~~~ 5) Bar Plot: payment_method ~~~
+    # ~~~~~~~~~~~ 5) Bar Plot: payment_method ~~~~~~~~~~~
     df_payment_count = to_percentages(df_filtered, 'payment_method')
     fig_payment = px.bar(
         df_payment_count,
@@ -325,9 +434,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         textposition='outside'
     )
 
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # 6) Mean of all "prop_" columns
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~ 6) Mean of all "prop_" columns ~~~~~~~~~~~
     existing_prop_cols = [c for c in prop_cols if c in df_filtered.columns]
     if len(existing_prop_cols) > 0 and len(df_filtered) > 0:
         mean_values = df_filtered[existing_prop_cols].mean().reset_index()
@@ -346,10 +453,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     fig_prop_mean.update_xaxes(tickangle=45)
     fig_prop_mean.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
 
-
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # 7) Distribution Histogram for chosen column
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~ 7) Distribution Histogram for chosen column ~~~~~~~~~~~
     if behavior_col in df_filtered.columns:
         fig_hist = px.histogram(
             df_filtered,
@@ -358,6 +462,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
             height=500,
             title=f"Distribution of {behavior_col} — {cluster_title}"
         )
+        fig_hist.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
     else:
         fig_hist = px.histogram(
             pd.DataFrame({"NoData": []}),
@@ -365,12 +470,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
             title=f"No data for {behavior_col} in {cluster_title}"
         )
 
-    fig_hist.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
-        # fig_hist.update_traces(marker_color="rgba(255, 0, 0, 0.5)")
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # 8) Time-of-Day Bar Plot
-    #     Shows the average of prop_orders_dawn, morning, etc.
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~ 8) Time-of-Day Bar Plot ~~~~~~~~~~~
     existing_tod_cols = [c for c in time_of_day_cols if c in df_filtered.columns]
     if existing_tod_cols and len(df_filtered) > 0:
         mean_tod = df_filtered[existing_tod_cols].mean().reset_index()
@@ -389,10 +489,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     fig_time_of_day.update_xaxes(tickangle=45)
     fig_time_of_day.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
 
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # 9) Weekend/Weekday Bar Plot
-    #     Shows the average of prop_weekend_orders, prop_weekday_orders
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~ 9) Weekend/Weekday Bar Plot ~~~~~~~~~~~
     existing_week_cols = [c for c in week_cols if c in df_filtered.columns]
     if existing_week_cols and len(df_filtered) > 0:
         mean_weeks = df_filtered[existing_week_cols].mean().reset_index()
@@ -411,6 +508,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     fig_weekend.update_xaxes(tickangle=45)
     fig_weekend.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
 
+    # Return all 9 figures
     return (
         fig_scatter,      # 1
         fig_box,          # 2
