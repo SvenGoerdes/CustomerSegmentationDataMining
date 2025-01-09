@@ -73,6 +73,7 @@ app.layout = dmc.Container(
             id="tabs-example-graph",
             value='tab-1-example-graph',
             children=[
+                dcc.Tab(label='Metadata Overview', value='metadata-overview'),
                 dcc.Tab(label='The Chain Enthusiasts', value='tab-1-example-graph'),
                 dcc.Tab(label='The Indian Food Lovers', value='tab-2-example-graph'),
                 dcc.Tab(label='The Average Consumers', value='tab-3-example-graph'),
@@ -211,6 +212,10 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
       8) Time-of-Day Bar Plot (average of 4 columns)
       9) Weekend/Weekday Bar Plot (average of 2 columns)
     """
+
+    # if active_tab == 'metadata-overview':
+
+
 
     # Decide which cluster data to filter
     if active_tab == 'tab-7-example-graph':
