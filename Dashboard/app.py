@@ -12,21 +12,33 @@ df_clust = pd.read_csv('../Data/df_clustering_non_standardized_mergedlabel.csv')
 with open('initial_perspectives.json') as f:
     initial_perspective = json.load(f)
 
-# The JSON file presumably has keys: 'customer_behavior', 'cuisine_preferences', 'demographics'
 cust_col = initial_perspective['customer_behavior']     # e.g. behavior columns
 cui_col = initial_perspective['cuisine_preferences']    # e.g. cuisine columns
 demogr_col = initial_perspective['demographics']        # e.g. region/generation/payment_method, etc.
 
-# For demonstration, let's assume you want to scatter-plot from the same set of behavior columns:
-metric_features = cust_col + cust_col  # (Your code doubled it; adjust as needed)
+# For demonstration, you originally used the same list twice:
+metric_features = cust_col + cust_col  
 
-# Identify the columns that start with 'prop_' from the behavior set:
+# Identify columns that start with 'prop_' from the behavior set
 prop_cols = [c for c in cust_col if c.startswith('prop_')]
+
+# The four time-of-day columns
+time_of_day_cols = [
+    "prop_orders_dawn",
+    "prop_orders_morning",
+    "prop_orders_afternoon",
+    "prop_orders_evening"
+]
+# The weekend/weekday columns
+week_cols = [
+    "prop_weekend_orders",
+    "prop_weekday_orders"
+]
 
 # Melt DF for box plots (using the cuisine columns)
 df_cui_melted = df_clust.melt(
     id_vars=['merged_labels_name'],
-    value_vars=cui_col,   # from your JSON
+    value_vars=cui_col,
     var_name='cuisine',
     value_name='proportion'
 )
@@ -51,6 +63,7 @@ app = Dash()
 # ------------------------------------------------------------------
 app.layout = dmc.Container(
     children=[
+        # Title & Tabs
         dmc.Title("Data Mining Cluster Dashboard", color='#000000', size="h1"),
         html.Hr(),
         html.Br(),
@@ -73,6 +86,11 @@ app.layout = dmc.Container(
 
         html.Br(),
 
+
+        # Cuisine Section
+        dmc.Title("Cuisine Preferences", color="blue", size="h2"),
+        html.Hr(),
+        # Scatter Plot Controls
         dmc.Text(
             "Select the two columns for the scatterplot:",
             size="md",
@@ -93,10 +111,6 @@ app.layout = dmc.Container(
             className='dash-dropdown',
             style={'marginBottom': '20px', 'width': '250px'}
         ),
-
-        # Cuisine Section
-        dmc.Title("Cuisine preferences", color="blue", size="h2"),
-        html.Hr(),
         dmc.Grid([
             dmc.Col([
                 dcc.Graph(
@@ -140,27 +154,33 @@ app.layout = dmc.Container(
             style={'marginBottom': '20px', 'width': '350px'}
         ),
 
+        # Behavior Plots: 2 rows, 2 columns each
+        # Row 1: Mean prop_... + histogram
         dmc.Grid([
             dmc.Col([
-                dcc.Graph(id='behavior-hist')        # Distribution histogram
+                dcc.Graph(id='behavior-mean-prop')  # 6) Mean proportion bar
             ], span=6),
             dmc.Col([
-                dcc.Graph(id='behavior-mean-prop')  # Mean proportion bar
+                dcc.Graph(id='behavior-hist')       # 7) Distribution histogram
             ], span=6),
-
-            # dmc.Col([
-            #     dcc.Graph(id='behavior-heatmap')     # Correlation heatmap
-            # ], span=12),
-
         ], gutter="md"),
 
+        # Row 2: Time-of-day + Weekend/Weekday
+        dmc.Grid([
+            dmc.Col([
+                dcc.Graph(id='behavior-time-of-day')  # 8) Time-of-day bar
+            ], span=6),
+            dmc.Col([
+                dcc.Graph(id='behavior-weekend')      # 9) Weekend vs. Weekday
+            ], span=6),
+        ], gutter="md"),
     ],
     fluid=True,
     style={"padding": "10px"}
 )
 
 # ------------------------------------------------------------------
-# 4) Callback: Return all 8 figures
+# 4) Callback: Return 9 figures total
 # ------------------------------------------------------------------
 @callback(
     Output('controls-and-graph', 'figure'),
@@ -168,9 +188,10 @@ app.layout = dmc.Container(
     Output('barplot-region', 'figure'),
     Output('barplot-generation', 'figure'),
     Output('barplot-payment-method', 'figure'),
-    Output('behavior-mean-prop', 'figure'),
-    # Output('behavior-heatmap', 'figure'),
     Output('behavior-hist', 'figure'),
+    Output('behavior-mean-prop', 'figure'),
+    Output('behavior-time-of-day', 'figure'),
+    Output('behavior-weekend', 'figure'),
     Input('controls-and-dropdown-1', 'value'),
     Input('controls-and-dropdown-2', 'value'),
     Input('tabs-example-graph', 'value'),
@@ -178,16 +199,17 @@ app.layout = dmc.Container(
 )
 def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     """
-    Returns 8 figures:
+    Returns 9 figures:
 
       1) Scatter Plot
-      2) Box Plot of cuisine columns
+      2) Cuisine Box Plot
       3) Bar Plot of 'customer_region' (relative %)
       4) Bar Plot of 'generation' (relative %)
       5) Bar Plot of 'payment_method' (relative %)
-      6) Bar Plot: Mean of prop_ columns
-      7) Correlation Heatmap among all behavior columns
-      8) Histogram for the chosen behavior column
+      6) Bar Plot: Mean of all prop_ columns
+      7) Histogram for chosen behavior column
+      8) Time-of-Day Bar Plot (average of 4 columns)
+      9) Weekend/Weekday Bar Plot (average of 2 columns)
     """
 
     # Decide which cluster data to filter
@@ -199,16 +221,28 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         df_filtered = df_clust[df_clust['merged_labels_name'] == cluster_name].copy()
         cluster_title = cluster_name
 
-    # 1) Scatter Plot
-    fig_scatter = px.scatter(
-        df_filtered,
-        x=col_chosen_1,
-        y=col_chosen_2,
+    if active_tab == 'tab-7-example-graph':
+       fig_scatter = px.scatter(
+          df_filtered,
+         x=col_chosen_1,
+         y=col_chosen_2,
         height=700,
+        color='merged_labels_name', 
         title=f'Scatter: {col_chosen_1} vs. {col_chosen_2} — {cluster_title}'
     )
+    else:
 
-    # 2) Box Plot of cuisine columns
+    # ~~~ 1) Scatter Plot ~~~
+        fig_scatter = px.scatter(
+            df_filtered,
+            x=col_chosen_1,
+            y=col_chosen_2,
+            height=700,
+            title=f'Scatter: {col_chosen_1} vs. {col_chosen_2} — {cluster_title}'
+        )
+        fig_scatter.update_traces(marker_color="rgba(0, 0, 150, 0.5)")
+
+    # ~~~ 2) Box Plot: Cuisine ~~~
     if active_tab == 'tab-7-example-graph':
         df_cui_filtered = df_cui_melted.copy()
     else:
@@ -223,8 +257,9 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     )
     fig_box.update_layout(showlegend=False)
     fig_box.update_xaxes(tickangle=45)
+    fig_box.update_traces(marker_color="rgba(0, 0, 150, 0.5)")
 
-    # Helper for relative percentages
+    # ~~~ Helper for relative percentages in demographics ~~~
     def to_percentages(local_df, col):
         temp = (
             local_df
@@ -237,7 +272,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         temp['percentage'] = temp['count'] / total_count * 100 if total_count > 0 else 0
         return temp
 
-    # 3) Bar Plot: customer_region
+    # ~~~ 3) Bar Plot: customer_region ~~~
     df_region_count = to_percentages(df_filtered, 'customer_region')
     fig_region = px.bar(
         df_region_count,
@@ -253,7 +288,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         textposition='outside'
     )
 
-    # 4) Bar Plot: generation
+    # ~~~ 4) Bar Plot: generation ~~~
     df_gen_count = to_percentages(df_filtered, 'generation')
     fig_generation = px.bar(
         df_gen_count,
@@ -269,7 +304,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         textposition='outside'
     )
 
-    # 5) Bar Plot: payment_method
+    # ~~~ 5) Bar Plot: payment_method ~~~
     df_payment_count = to_percentages(df_filtered, 'payment_method')
     fig_payment = px.bar(
         df_payment_count,
@@ -285,17 +320,13 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         textposition='outside'
     )
 
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # 6) Bar Chart: Mean of columns that start with "prop_"
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    if len(df_filtered) > 0:
-        # Only consider prop_ columns that actually exist in df_filtered
-        existing_prop_cols = [c for c in prop_cols if c in df_filtered.columns]
-        if existing_prop_cols:
-            mean_values = df_filtered[existing_prop_cols].mean().reset_index()
-            mean_values.columns = ["prop_col", "mean_value"]
-        else:
-            mean_values = pd.DataFrame({"prop_col": [], "mean_value": []})
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # 6) Mean of all "prop_" columns
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    existing_prop_cols = [c for c in prop_cols if c in df_filtered.columns]
+    if len(existing_prop_cols) > 0 and len(df_filtered) > 0:
+        mean_values = df_filtered[existing_prop_cols].mean().reset_index()
+        mean_values.columns = ["prop_col", "mean_value"]
     else:
         mean_values = pd.DataFrame({"prop_col": [], "mean_value": []})
 
@@ -308,30 +339,12 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         height=500
     )
     fig_prop_mean.update_xaxes(tickangle=45)
+    fig_prop_mean.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
 
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # 7) Correlation Heatmap among all behavior columns
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # We'll consider all columns in cust_col that exist in df_filtered
-    existing_behavior_cols = [c for c in cust_col if c in df_filtered.columns]
-    if len(existing_behavior_cols) > 1:
-        corr_data = df_filtered[existing_behavior_cols].corr()
-        fig_heatmap = px.imshow(
-            corr_data,
-            text_auto=True,
-            color_continuous_scale="RdBu_r",
-            title=f"Correlation Heatmap — {cluster_title}",
-            aspect="auto",
-            height=500
-        )
-    else:
-        # Not enough columns to compute correlation
-        fig_heatmap = px.imshow([[0]], text_auto=True)
-        fig_heatmap.update_layout(title="Correlation Heatmap (Not enough data)")
 
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    # 8) Distribution Histogram for chosen behavior column
-    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # 7) Distribution Histogram for chosen column
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     if behavior_col in df_filtered.columns:
         fig_hist = px.histogram(
             df_filtered,
@@ -347,16 +360,64 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
             title=f"No data for {behavior_col} in {cluster_title}"
         )
 
-    return (
-        fig_scatter,
-        fig_box,
-        fig_region,
-        fig_generation,
-        fig_payment,
-        fig_prop_mean,
-        # fig_heatmap,
-        fig_hist
+    fig_hist.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
+        # fig_hist.update_traces(marker_color="rgba(255, 0, 0, 0.5)")
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # 8) Time-of-Day Bar Plot
+    #     Shows the average of prop_orders_dawn, morning, etc.
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    existing_tod_cols = [c for c in time_of_day_cols if c in df_filtered.columns]
+    if existing_tod_cols and len(df_filtered) > 0:
+        mean_tod = df_filtered[existing_tod_cols].mean().reset_index()
+        mean_tod.columns = ["time_of_day", "avg_value"]
+    else:
+        mean_tod = pd.DataFrame({"time_of_day": [], "avg_value": []})
+
+    fig_time_of_day = px.bar(
+        mean_tod,
+        x="time_of_day",
+        y="avg_value",
+        title=f"Average Time-of-Day Orders — {cluster_title}",
+        labels={"time_of_day": "Time of Day", "avg_value": "Avg Proportion"},
+        height=500
     )
+    fig_time_of_day.update_xaxes(tickangle=45)
+    fig_time_of_day.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
+
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    # 9) Weekend/Weekday Bar Plot
+    #     Shows the average of prop_weekend_orders, prop_weekday_orders
+    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    existing_week_cols = [c for c in week_cols if c in df_filtered.columns]
+    if existing_week_cols and len(df_filtered) > 0:
+        mean_weeks = df_filtered[existing_week_cols].mean().reset_index()
+        mean_weeks.columns = ["week_col", "avg_value"]
+    else:
+        mean_weeks = pd.DataFrame({"week_col": [], "avg_value": []})
+
+    fig_weekend = px.bar(
+        mean_weeks,
+        x="week_col",
+        y="avg_value",
+        title=f"Average Weekend/Weekday Orders — {cluster_title}",
+        labels={"week_col": "Column", "avg_value": "Avg Proportion"},
+        height=500
+    )
+    fig_weekend.update_xaxes(tickangle=45)
+    fig_weekend.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
+
+    return (
+        fig_scatter,      # 1
+        fig_box,          # 2
+        fig_region,       # 3
+        fig_generation,   # 4
+        fig_payment,      # 5
+        fig_prop_mean,    # 6
+        fig_hist,         # 7
+        fig_time_of_day,  # 8
+        fig_weekend       # 9
+    )
+
 
 # ------------------------------------------------------------------
 # 5) Run the app
