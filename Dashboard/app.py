@@ -17,7 +17,7 @@ cui_col = initial_perspective['cuisine_preferences']    # e.g. cuisine columns
 demogr_col = initial_perspective['demographics']        # e.g. region/generation/payment_method, etc.
 
 # For demonstration, you originally used the same list twice:
-metric_features = cust_col + cust_col  
+metric_features = cust_col + cust_col  + demogr_col
 
 # Identify columns that start with 'prop_' from the behavior set
 prop_cols = [c for c in cust_col if c.startswith('prop_')]
@@ -68,11 +68,11 @@ app.layout = dmc.Container(
         html.Hr(),
         html.Br(),
     
-        dmc.Title("Choose the Cluster:", color='#000000', size="h4"),
+        dmc.Title("Choose the Cluster you want to inspect:", color='#000000', size="h4"),
         dcc.Tabs(
             id="tabs-example-graph",
             # value='tab-1-example-graph',
-            value='metadata-overview',
+            value='tab-1-example-graph',
             children=[
                 dcc.Tab(label='Metadata Overview', value='metadata-overview'),
                 dcc.Tab(label='The Chain Enthusiasts', value='tab-1-example-graph'),
@@ -117,7 +117,7 @@ app.layout = dmc.Container(
                 html.Br(),
                 html.B('The following sections provide an overview of the columns in the dataset:'),
                 html.Br(),
-                html.Hr(),
+
 
                 html.Br(),
                 html.Br(),
@@ -126,11 +126,13 @@ app.layout = dmc.Container(
 
                 # Customer Behavior columns
                 html.H3("Customer Behavior Columns"),
+                html.Hr(),
                 # add a short text about the metadata of the customer behaviour columns
                 # html.P('This is some text about the metadata of the behaviour columns'),
                 # html.Ul([html.Li(col) for col in cust_col]),
 
                 html.P('The behaviour columns are defined as following.'),
+                
 
                 html.Ul([
                 html.Li("prop_chain_orders — The share of total orders placed at chain restaurants."),
@@ -153,6 +155,7 @@ app.layout = dmc.Container(
                 ]),
                 # Cuisine columns
                 html.H3("Cuisine Preferences Columns"),
+                html.Hr(),
                 html.P('''The following columns specify how often a customer orders a certain cuisine. The values are in proportion to the total number of orders.
                         As an example: if a customer orders 10 times in total and 3 times Indian food, the value in the column "prop_orders_indian" would be 0.3.'''),
                 # The columns can be overlapping. For example 
@@ -164,6 +167,7 @@ app.layout = dmc.Container(
 
                 # Demographics columns
                 html.H3("Demographics Columns"),
+                html.Hr(),
                 html.Ul([
                     html.Li("customer_region — The geographic region where the customer resides."),
                     html.Li("city — The city where the customer resides. Represented as an int."),
@@ -181,7 +185,7 @@ app.layout = dmc.Container(
         # B) REMAINDER OF LAYOUT (PLOTS)
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # Cuisine Section
-        dmc.Title("Cuisine Preferences", color="blue", size="h2"),
+        dmc.Title("Cuisine Preferences", color="#000066", size="h2"),
         html.Hr(),
         # Scatter Plot Controls
         dmc.Text(
@@ -221,7 +225,7 @@ app.layout = dmc.Container(
         ], gutter="md"),
 
         # Demographics Section
-        dmc.Title("Demographics", color="blue", size="h2"),
+        dmc.Title("Demographics", color="#660000", size="h2"),
         html.Hr(),
         dmc.Grid([
             dmc.Col([
@@ -236,7 +240,7 @@ app.layout = dmc.Container(
         ], gutter="md"),
 
         # Behavior Section
-        dmc.Title("Behavior", color="blue", size="h2"),
+        dmc.Title("Behavior", color="#006600", size="h2"),
         html.Hr(),
         dmc.Text("Choose a behavior column to see its distribution:", size="md", weight=600),
         dcc.Dropdown(
@@ -297,8 +301,8 @@ def toggle_metadata_overview(selected_tab):
     Output('barplot-region', 'figure'),
     Output('barplot-generation', 'figure'),
     Output('barplot-payment-method', 'figure'),
-    Output('behavior-mean-prop', 'figure'),
     Output('behavior-hist', 'figure'),
+    Output('behavior-mean-prop', 'figure'),
     Output('behavior-time-of-day', 'figure'),
     Output('behavior-weekend', 'figure'),
     Input('controls-and-dropdown-1', 'value'),
@@ -354,7 +358,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
             height=700,
             title=f'Scatter: {col_chosen_1} vs. {col_chosen_2} — {cluster_title}'
         )
-        fig_scatter.update_traces(marker_color="rgba(0, 0, 150, 0.5)")
+        fig_scatter.update_traces(marker_color="rgba(0, 0, 102, 0.5)")
 
     # ~~~~~~~~~~~ 2) Box Plot: Cuisine ~~~~~~~~~~~
     if active_tab == 'tab-7-example-graph':
@@ -371,7 +375,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     )
     fig_box.update_layout(showlegend=False)
     fig_box.update_xaxes(tickangle=45)
-    fig_box.update_traces(marker_color="rgba(0, 0, 150, 0.5)")
+    fig_box.update_traces(marker_color="rgba(0, 0, 102, 0.5)")
 
     # Helper for relative percentages in demographics
     def to_percentages(local_df, col):
@@ -401,7 +405,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         texttemplate='%{text:.2f}%',
         textposition='outside'
     )
-
+    fig_region.update_traces(marker_color="rgba(102, 0, 0, 0.5)")
     # ~~~~~~~~~~~ 4) Bar Plot: generation ~~~~~~~~~~~
     df_gen_count = to_percentages(df_filtered, 'generation')
     fig_generation = px.bar(
@@ -418,6 +422,9 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         textposition='outside'
     )
 
+    # fig_generation.update_traces(marker_color="rgba(102, 0, 0, 0.5)")
+    fig_generation.update_traces(marker_color="rgba(102, 0, 0, 0.5)")
+
     # ~~~~~~~~~~~ 5) Bar Plot: payment_method ~~~~~~~~~~~
     df_payment_count = to_percentages(df_filtered, 'payment_method')
     fig_payment = px.bar(
@@ -433,6 +440,9 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         texttemplate='%{text:.2f}%',
         textposition='outside'
     )
+
+    fig_payment.update_traces(marker_color="rgba(102, 0, 0, 0.5)")
+
 
     # ~~~~~~~~~~~ 6) Mean of all "prop_" columns ~~~~~~~~~~~
     existing_prop_cols = [c for c in prop_cols if c in df_filtered.columns]
