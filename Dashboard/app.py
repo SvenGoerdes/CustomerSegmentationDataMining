@@ -16,11 +16,20 @@ cust_col = initial_perspective['customer_behavior']     # e.g. behavior columns
 cui_col = initial_perspective['cuisine_preferences']    # e.g. cuisine columns
 demogr_col = initial_perspective['demographics']        # e.g. region/generation/payment_method, etc.
 
+# combine all columns
+all_cols = cust_col + cui_col + demogr_col
+
+# filter columns that are numeric
+numeric_features = df_clust[all_cols].select_dtypes(include=['number']).columns
+
 # For demonstration, you originally used the same list twice:
 metric_features = cust_col + cust_col  + demogr_col
 
+# Filter for all columns that start with 'prop_'
+metric_prop_cols = [c for c in df_clust.columns if c.startswith('prop_')]
+
 # Identify columns that start with 'prop_' from the behavior set
-prop_cols = [c for c in cust_col if c.startswith('prop_')]
+prop_cols_behav = [c for c in cust_col if c.startswith('prop_')]
 
 # The four time-of-day columns
 time_of_day_cols = [
@@ -65,6 +74,12 @@ app.layout = dmc.Container(
     children=[
         # Title & Tabs
         dmc.Title("Data Mining Cluster Dashboard", color='#000000', size="h1"),
+        # write a small disclamier that we included the outliers into the dataset and used the nearest centroid to assign the cluster label to the outliers
+        html.P('Disclaimer: The Dashboard shows plots that include the outliers. We used the nearest centroid to assign the cluster label to the outliers.'),
+
+
+
+
         html.Hr(),
         html.Br(),
     
@@ -156,8 +171,8 @@ app.layout = dmc.Container(
                 # Cuisine columns
                 html.H3("Cuisine Preferences Columns"),
                 html.Hr(),
-                html.P('''The following columns specify how often a customer orders a certain cuisine. The values are in proportion to the total number of orders.
-                        As an example: if a customer orders 10 times in total and 3 times Indian food, the value in the column "prop_orders_indian" would be 0.3.'''),
+                html.P('''The following columns specify how often a customer orders a certain cuisine. The values are in proportion to the total value of orders.
+                        As an example: if a customer orders 100 Euros worth of food total and 30 Euros in the section Indian food, the value in the column "prop_orders_indian" would be 0.3.'''),
                 # The columns can be overlapping. For example 
                 # html.H5('As an example: if a customer orders 10 times in total and 3 times Indian food, the value in the column "prop_orders_indian" would be 0.3.'),
 
@@ -270,6 +285,18 @@ app.layout = dmc.Container(
                 dcc.Graph(id='behavior-weekend')      # 9) Weekend vs. Weekday
             ], span=6),
         ], gutter="md"),
+
+
+
+        # Heatmap
+        dmc.Title("Average Metric Values by Cluster", color="#000000", size="h2"),
+        html.Hr(),
+        html.P('The heatmap shows the average metric values by cluster without the outliers. The values are between 0 and 1. For more information about the clusters, please refer to the "Metadata Overview" tab.'),
+        dcc.Graph(
+            figure={},
+            id='cluster-heatmap',
+
+        ),
     ],
     fluid=True,
     style={"padding": "10px"}
@@ -305,6 +332,7 @@ def toggle_metadata_overview(selected_tab):
     Output('behavior-mean-prop', 'figure'),
     Output('behavior-time-of-day', 'figure'),
     Output('behavior-weekend', 'figure'),
+    Output('cluster-heatmap', 'figure'),
     Input('controls-and-dropdown-1', 'value'),
     Input('controls-and-dropdown-2', 'value'),
     Input('tabs-example-graph', 'value'),
@@ -444,8 +472,8 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     fig_payment.update_traces(marker_color="rgba(102, 0, 0, 0.5)")
 
 
-    # ~~~~~~~~~~~ 6) Mean of all "prop_" columns ~~~~~~~~~~~
-    existing_prop_cols = [c for c in prop_cols if c in df_filtered.columns]
+    # ~~~~~~~~~~~ 6) Mean of all "prop_" columns  of the behavior columns ~~~~~~~~~~~
+    existing_prop_cols = [c for c in prop_cols_behav if c in df_filtered.columns]
     if len(existing_prop_cols) > 0 and len(df_filtered) > 0:
         mean_values = df_filtered[existing_prop_cols].mean().reset_index()
         mean_values.columns = ["prop_col", "mean_value"]
@@ -518,7 +546,39 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     fig_weekend.update_xaxes(tickangle=45)
     fig_weekend.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
 
-    # Return all 9 figures
+
+
+    #  calculate the average metric values by cluster withouth the outliers
+    # and create a heatmap
+    # 
+# 1) Group data and remove outliers
+    grouped_data = (
+        df_clust[~df_clust['is_outlier']]
+        .groupby('merged_labels_name')[metric_prop_cols]
+        .mean()
+        .reset_index()
+)
+
+# 2) Transpose the DataFrame so clusters become columns
+#    and metric features become row indices
+    grouped_data_t = grouped_data.set_index('merged_labels_name').T
+
+# 3) Create the heatmap with the transposed data
+    fig_heatmap = px.imshow(
+        grouped_data_t,                 # transposed data
+        labels=dict(y="Metric Features", x="Clusters", color="Average Value"),
+        x=grouped_data_t.columns,       # cluster names
+        y=grouped_data_t.index,         # metric feature names
+        color_continuous_scale="BrBG",
+        text_auto=True,                 # automatically add text (cell values)
+        title="Average Metric Values by Cluster (without outliers)",
+        aspect="auto",
+        height=1000
+    )
+
+
+
+    # Return all 10 figures
     return (
         fig_scatter,      # 1
         fig_box,          # 2
@@ -528,7 +588,8 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         fig_prop_mean,    # 6
         fig_hist,         # 7
         fig_time_of_day,  # 8
-        fig_weekend       # 9
+        fig_weekend,      # 9
+        fig_heatmap       #10
     )
 
 
