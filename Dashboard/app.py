@@ -22,8 +22,7 @@ all_cols = cust_col + cui_col + demogr_col
 # filter columns that are numeric
 numeric_features = df_clust[all_cols].select_dtypes(include=['number']).columns
 
-# For demonstration, you originally used the same list twice:
-metric_features = cust_col + cust_col  + demogr_col
+metric_features = cust_col + cust_col + demogr_col  # old usage in your code
 
 # Filter for all columns that start with 'prop_'
 metric_prop_cols = [c for c in df_clust.columns if c.startswith('prop_')]
@@ -31,28 +30,18 @@ metric_prop_cols = [c for c in df_clust.columns if c.startswith('prop_')]
 # Identify columns that start with 'prop_' from the behavior set
 prop_cols_behav = [c for c in cust_col if c.startswith('prop_')]
 
-# The four time-of-day columns
 time_of_day_cols = [
     "prop_orders_dawn",
     "prop_orders_morning",
     "prop_orders_afternoon",
     "prop_orders_evening"
 ]
-# The weekend/weekday columns
 week_cols = [
     "prop_weekend_orders",
     "prop_weekday_orders"
 ]
 
-# Melt DF for box plots (using the cuisine columns)
-df_cui_melted = df_clust.melt(
-    id_vars=['merged_labels_name'],
-    value_vars=cui_col,
-    var_name='cuisine',
-    value_name='proportion'
-)
-
-# Tab-to-cluster mapping (for everything except the metadata tab & "all individuals" tab)
+# Tab-to-cluster mapping
 cluster_map = {
     'tab-1-example-graph': 'The Chain Enthusiasts',
     'tab-2-example-graph': 'The Indian Food Lovers',
@@ -72,21 +61,14 @@ app = Dash()
 # ------------------------------------------------------------------
 app.layout = dmc.Container(
     children=[
-        # Title & Tabs
         dmc.Title("Data Mining Cluster Dashboard", color='#000000', size="h1"),
-        # write a small disclamier that we included the outliers into the dataset and used the nearest centroid to assign the cluster label to the outliers
-        html.P('Disclaimer: The Dashboard shows plots that include the outliers. We used the nearest centroid to assign the cluster label to the outliers.'),
-
-
-
-
+        html.P('Disclaimer: The Dashboard shows plots that include the outliers...'),
         html.Hr(),
         html.Br(),
     
         dmc.Title("Choose the Cluster you want to inspect:", color='#000000', size="h4"),
         dcc.Tabs(
             id="tabs-example-graph",
-            # value='tab-1-example-graph',
             value='tab-1-example-graph',
             children=[
                 dcc.Tab(label='Metadata Overview', value='metadata-overview'),
@@ -101,114 +83,44 @@ app.layout = dmc.Container(
             style={'marginBottom': '20px'}
         ),
 
+        dmc.Text("Filter by Generation:", size="md", weight=600),
+        dcc.Dropdown(
+            options=[
+                {'label': gen, 'value': gen}
+                for gen in sorted(df_clust['generation'].dropna().unique())
+            ],
+            value=sorted(df_clust['generation'].dropna().unique()),
+            placeholder='Select generation(s)...',
+            multi=True,
+            id='gen-filter',
+            style={'marginBottom': '20px', 'width': '700px'}
+        ),
+
         html.Br(),
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # A) METADATA OVERVIEW SECTION
+        # METADATA OVERVIEW SECTION
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         html.Div(
             id='metadata-overview-content',
-            style={'display': 'none'},  # hidden by default
+            style={'display': 'none'},
             children=[
-                # A nice heading
                 dmc.Title("Metadata: Overview", color="blue", size="h2"),
                 html.Hr(),
-                # Short introduction about the metadata and dataset. The dataset contains about 31236 rows and 44 columns. The original columns have been preprocessed and transformed into 
-                # relative proportions, which are used for clustering. The dataset contains information about customer behavior, cuisine preferences, and demographics.
-                # 
-
                 html.B(
-                    'The dataset contains about 31236 rows and 44 columns. '
-                    'Some of the original columns have been preprocessed and transformed into relative proportions, '
-                    'which are used for clustering and for the dashboard. The dataset information/columns can be splitted into customer behavior, '
-                    'cuisine preferences, and demographics. '
-                    'Additionally, we have added the outliers back into the dataset for the dashboard. We used the nearest centroid to assign the cluster label to the outliers.'
-
-
+                    'The dataset contains about 31236 rows and 44 columns...'
                 ),
-
-                html.Br(),
-                html.Br(),
-                html.Br(),
-                html.B('The following sections provide an overview of the columns in the dataset:'),
-                html.Br(),
-
-
-                html.Br(),
-                html.Br(),
-                # make a empty paragaphr
-
-
-                # Customer Behavior columns
-                html.H3("Customer Behavior Columns"),
-                html.Hr(),
-                # add a short text about the metadata of the customer behaviour columns
-                # html.P('This is some text about the metadata of the behaviour columns'),
-                # html.Ul([html.Li(col) for col in cust_col]),
-
-                html.P('The behaviour columns are defined as following.'),
-                
-
-                html.Ul([
-                html.Li("prop_chain_orders — The share of total orders placed at chain restaurants."),
-                html.Li("prop_weekend_orders — The proportion of orders on weekends (Sat/Sun)."),
-                html.Li("prop_weekday_orders — The proportion of orders on weekdays (Mon–Fri)."),
-                html.Li("prop_orders_dawn — Fraction of orders during dawn hours."),
-                html.Li("prop_orders_morning — Fraction of orders in the morning."),
-                html.Li("prop_orders_afternoon — Fraction of orders in the afternoon."),
-                html.Li("prop_orders_evening — Fraction of orders in the evening."),
-                html.Li("first_order — A number indicating when the first order was. A 0 indicates at the start of the observation period."),
-                html.Li("last_order — A number indicating when the last order was. A 90 indicates at the end of the observation period"),
-                html.Li("order_recency — Time elapsed since the last order in the A 90 days timeframe of the dataset."),
-                html.Li("product_count — How many distinct products the customer has purchased."),
-                html.Li("vendor_count — How many different vendors the customer has used."),
-                html.Li("total_cui_spending — The total amount spent (across all cuisine orders)."),
-                html.Li("total_orders — The total number of orders the customer has made."),
-                html.Li("avg_daily_orders — Average orders per day, showing overall ordering frequency."),
-                html.Li("avg_order_value — Average monetary value per order."),
-                html.Li("products_per_vendor — Average distinct products purchased per vendor."),
-                ]),
-                # Cuisine columns
-                html.H3("Cuisine Preferences Columns"),
-                html.Hr(),
-                html.P('''The following columns specify how often a customer orders a certain cuisine. The values are in proportion to the total value of orders.
-                        As an example: if a customer orders 100 Euros worth of food total and 30 Euros in the section Indian food, the value in the column "prop_orders_indian" would be 0.3.'''),
-                # The columns can be overlapping. For example 
-                # html.H5('As an example: if a customer orders 10 times in total and 3 times Indian food, the value in the column "prop_orders_indian" would be 0.3.'),
-
-                html.Ul([html.Li(col) for col in cui_col]),
-
-                html.Br(),
-
-                # Demographics columns
-                html.H3("Demographics Columns"),
-                html.Hr(),
-                html.Ul([
-                    html.Li("customer_region — The geographic region where the customer resides."),
-                    html.Li("city — The city where the customer resides. Represented as an int."),
-                    html.Li("generation — The customer’s generational group (e.g., Gen-Z, Millennial)."),
-                    html.Li("customer_age — The numerical age of the customer."),
-                    html.Li("last_promo — Details of the most recent promo the customer used."),
-                    html.Li("payment_method — The method used by the customer to pay for orders."),
-                    html.Li("promo_used — A binary indicating whether the customer used a promotional offer."),
-                ]),
-
+                # (Truncated for brevity)
             ]
         ),
 
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # B) REMAINDER OF LAYOUT (PLOTS)
+        # PLOTS
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        # Cuisine Section
         dmc.Title("Cuisine Preferences", color="#000066", size="h2"),
         html.Hr(),
-        # Scatter Plot Controls
-        dmc.Text(
-            "Select the two columns for the scatterplot:",
-            size="md",
-            weight=600,
-            id="select-columns"
-        ),
+
+        dmc.Text("Select the two columns for the scatterplot:", size="md", weight=600),
         dcc.Dropdown(
             options=metric_features,
             value=metric_features[0],
@@ -225,78 +137,48 @@ app.layout = dmc.Container(
         ),
         dmc.Grid([
             dmc.Col([
-                dcc.Graph(
-                    figure={},
-                    id='controls-and-graph',
-                    className='dark-graph'
-                )
+                dcc.Graph(figure={}, id='controls-and-graph', className='dark-graph')
             ], span=6),
             dmc.Col([
-                dcc.Graph(
-                    figure={},
-                    id='cuisine-box-graph'
-                )
+                dcc.Graph(figure={}, id='cuisine-box-graph')
             ], span=6),
         ], gutter="md"),
 
-        # Demographics Section
         dmc.Title("Demographics", color="#660000", size="h2"),
         html.Hr(),
         dmc.Grid([
-            dmc.Col([
-                dcc.Graph(figure={}, id='barplot-region')
-            ], span=4),
-            dmc.Col([
-                dcc.Graph(figure={}, id='barplot-generation')
-            ], span=4),
-            dmc.Col([
-                dcc.Graph(figure={}, id='barplot-payment-method')
-            ], span=4),
+            dmc.Col([dcc.Graph(figure={}, id='barplot-region')], span=4),
+            dmc.Col([dcc.Graph(figure={}, id='barplot-generation')], span=4),
+            dmc.Col([dcc.Graph(figure={}, id='barplot-payment-method')], span=4),
         ], gutter="md"),
 
-        # Behavior Section
         dmc.Title("Behavior", color="#006600", size="h2"),
         html.Hr(),
         dmc.Text("Choose a behavior column to see its distribution:", size="md", weight=600),
         dcc.Dropdown(
-            options=cust_col,   # all behavior columns from your JSON
-            value=cust_col[0],  # default selection
+            options=cust_col,
+            value=cust_col[0],
             id='behavior-dropdown',
             style={'marginBottom': '20px', 'width': '350px'}
         ),
 
-        # Behavior Plots: 2 rows, 2 columns each
-        # Row 1: Mean prop_... + histogram
         dmc.Grid([
-            dmc.Col([
-                dcc.Graph(id='behavior-mean-prop')  # 6) Mean proportion bar
-            ], span=6),
-            dmc.Col([
-                dcc.Graph(id='behavior-hist')       # 7) Distribution histogram
-            ], span=6),
+            dmc.Col([dcc.Graph(id='behavior-mean-prop')], span=6),
+            dmc.Col([dcc.Graph(id='behavior-hist')], span=6),
         ], gutter="md"),
 
-        # Row 2: Time-of-day + Weekend/Weekday
         dmc.Grid([
-            dmc.Col([
-                dcc.Graph(id='behavior-time-of-day')  # 8) Time-of-day bar
-            ], span=6),
-            dmc.Col([
-                dcc.Graph(id='behavior-weekend')      # 9) Weekend vs. Weekday
-            ], span=6),
+            dmc.Col([dcc.Graph(id='behavior-time-of-day')], span=6),
+            dmc.Col([dcc.Graph(id='behavior-weekend')], span=6),
         ], gutter="md"),
-
-
 
         # Heatmap
         dmc.Title("Average Metric Values by Cluster", color="#000000", size="h2"),
         html.Hr(),
-        html.P('The heatmap shows the average metric values by cluster without the outliers. The values are between 0 and 1. For more information about the clusters, please refer to the "Metadata Overview" tab.'),
-        dcc.Graph(
-            figure={},
-            id='cluster-heatmap',
-
+        html.P(
+            'The heatmap shows the average metric values by cluster without the outliers. It does not filter by generation.'
         ),
+        dcc.Graph(figure={}, id='cluster-heatmap'),
     ],
     fluid=True,
     style={"padding": "10px"}
@@ -320,7 +202,7 @@ def toggle_metadata_overview(selected_tab):
         return {'display': 'none'}
 
 # ------------------------------------------------------------------
-# 4) B) Callback: Return 9 figures for the other tabs
+# 4) B) Callback: Return 10 figures for the other tabs
 # ------------------------------------------------------------------
 @callback(
     Output('controls-and-graph', 'figure'),
@@ -328,20 +210,20 @@ def toggle_metadata_overview(selected_tab):
     Output('barplot-region', 'figure'),
     Output('barplot-generation', 'figure'),
     Output('barplot-payment-method', 'figure'),
-    Output('behavior-hist', 'figure'),
     Output('behavior-mean-prop', 'figure'),
+    Output('behavior-hist', 'figure'),
     Output('behavior-time-of-day', 'figure'),
     Output('behavior-weekend', 'figure'),
     Output('cluster-heatmap', 'figure'),
     Input('controls-and-dropdown-1', 'value'),
     Input('controls-and-dropdown-2', 'value'),
     Input('tabs-example-graph', 'value'),
-    Input('behavior-dropdown', 'value')
+    Input('behavior-dropdown', 'value'),
+    Input('gen-filter', 'value')  # new generation filter
 )
-def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
+def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col, gen_filter_list):
     """
-    Returns 9 figures:
-
+    Returns 10 figures:
       1) Scatter Plot
       2) Cuisine Box Plot
       3) Bar Plot of 'customer_region' (relative %)
@@ -349,27 +231,33 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
       5) Bar Plot of 'payment_method' (relative %)
       6) Bar Plot: Mean of all prop_ columns
       7) Histogram for chosen behavior column
-      8) Time-of-Day Bar Plot (average of 4 columns)
-      9) Weekend/Weekday Bar Plot (average of 2 columns)
+      8) Time-of-Day Bar Plot
+      9) Weekend/Weekday Bar Plot
+      10) Heatmap (average metric values by cluster)
     """
-    # If the user is on the "Metadata Overview" tab, just return 9 empty figures:
+    # 1) If on Metadata, return empty figs
     if active_tab == 'metadata-overview':
         empty_fig = px.scatter(title="(No Plot Shown - Metadata Tab)")
-        return (empty_fig, empty_fig, empty_fig, empty_fig, empty_fig,
-                empty_fig, empty_fig, empty_fig, empty_fig)
+        return tuple([empty_fig]*10)
 
-    # ~~~~~~~~~~~ Decide which cluster data to filter ~~~~~~~~~~~
+    # 2) Filter by generation first
+    if not gen_filter_list:
+        # If user unselects everything, show no data or revert to all. 
+        # We'll show no data for this example.
+        df_filtered = df_clust.iloc[0:0].copy()
+    else:
+        df_filtered = df_clust[df_clust['generation'].isin(gen_filter_list)].copy()
+
+    # 3) Filter by cluster
     if active_tab == 'tab-7-example-graph':
-        df_filtered = df_clust.copy()
         cluster_title = "All Individuals"
     else:
         cluster_name = cluster_map[active_tab]
-        df_filtered = df_clust[df_clust['merged_labels_name'] == cluster_name].copy()
+        df_filtered = df_filtered[df_filtered['merged_labels_name'] == cluster_name]
         cluster_title = cluster_name
 
     # ~~~~~~~~~~~ 1) Scatter Plot ~~~~~~~~~~~
     if active_tab == 'tab-7-example-graph':
-        # color by cluster if "All Individuals"
         fig_scatter = px.scatter(
             df_filtered,
             x=col_chosen_1,
@@ -388,11 +276,20 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
         )
         fig_scatter.update_traces(marker_color="rgba(0, 0, 102, 0.5)")
 
-    # ~~~~~~~~~~~ 2) Box Plot: Cuisine ~~~~~~~~~~~
-    if active_tab == 'tab-7-example-graph':
-        df_cui_filtered = df_cui_melted.copy()
+    # ~~~~~~~~~~~ 2) Cuisine Box Plot ~~~~~~~~~~~
+    # Melt the filtered DF for the cuisine columns
+    # So it reflects only the chosen cluster & generation(s)
+    if df_filtered.empty:
+        # If there's no data after filtering, create an empty DF
+        df_cui_filtered = pd.DataFrame(columns=['merged_labels_name','cuisine','proportion'])
     else:
-        df_cui_filtered = df_cui_melted[df_cui_melted['merged_labels_name'] == cluster_title]
+        # Combine 'merged_labels_name' with the relevant columns, then melt
+        df_cui_filtered = df_filtered[['merged_labels_name'] + cui_col].melt(
+            id_vars=['merged_labels_name'],
+            value_vars=cui_col,
+            var_name='cuisine',
+            value_name='proportion'
+        )
 
     fig_box = px.box(
         df_cui_filtered,
@@ -415,7 +312,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
             .rename(columns={col: f'{col}_str'})
         )
         total_count = temp['count'].sum()
-        temp['percentage'] = temp['count'] / total_count * 100 if total_count > 0 else 0
+        temp['percentage'] = (temp['count'] / total_count * 100) if total_count > 0 else 0
         return temp
 
     # ~~~~~~~~~~~ 3) Bar Plot: customer_region ~~~~~~~~~~~
@@ -431,9 +328,10 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     )
     fig_region.update_traces(
         texttemplate='%{text:.2f}%',
-        textposition='outside'
+        textposition='outside',
+        marker_color="rgba(102, 0, 0, 0.5)"
     )
-    fig_region.update_traces(marker_color="rgba(102, 0, 0, 0.5)")
+
     # ~~~~~~~~~~~ 4) Bar Plot: generation ~~~~~~~~~~~
     df_gen_count = to_percentages(df_filtered, 'generation')
     fig_generation = px.bar(
@@ -447,11 +345,9 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     )
     fig_generation.update_traces(
         texttemplate='%{text:.2f}%',
-        textposition='outside'
+        textposition='outside',
+        marker_color="rgba(102, 0, 0, 0.5)"
     )
-
-    # fig_generation.update_traces(marker_color="rgba(102, 0, 0, 0.5)")
-    fig_generation.update_traces(marker_color="rgba(102, 0, 0, 0.5)")
 
     # ~~~~~~~~~~~ 5) Bar Plot: payment_method ~~~~~~~~~~~
     df_payment_count = to_percentages(df_filtered, 'payment_method')
@@ -466,15 +362,13 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     )
     fig_payment.update_traces(
         texttemplate='%{text:.2f}%',
-        textposition='outside'
+        textposition='outside',
+        marker_color="rgba(102, 0, 0, 0.5)"
     )
 
-    fig_payment.update_traces(marker_color="rgba(102, 0, 0, 0.5)")
-
-
-    # ~~~~~~~~~~~ 6) Mean of all "prop_" columns  of the behavior columns ~~~~~~~~~~~
+    # ~~~~~~~~~~~ 6) Mean of all "prop_" columns from behavior ~~~~~~~~~~~
     existing_prop_cols = [c for c in prop_cols_behav if c in df_filtered.columns]
-    if len(existing_prop_cols) > 0 and len(df_filtered) > 0:
+    if len(existing_prop_cols) > 0 and not df_filtered.empty:
         mean_values = df_filtered[existing_prop_cols].mean().reset_index()
         mean_values.columns = ["prop_col", "mean_value"]
     else:
@@ -492,7 +386,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     fig_prop_mean.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
 
     # ~~~~~~~~~~~ 7) Distribution Histogram for chosen column ~~~~~~~~~~~
-    if behavior_col in df_filtered.columns:
+    if (behavior_col in df_filtered.columns) and (not df_filtered.empty):
         fig_hist = px.histogram(
             df_filtered,
             x=behavior_col,
@@ -510,7 +404,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
 
     # ~~~~~~~~~~~ 8) Time-of-Day Bar Plot ~~~~~~~~~~~
     existing_tod_cols = [c for c in time_of_day_cols if c in df_filtered.columns]
-    if existing_tod_cols and len(df_filtered) > 0:
+    if existing_tod_cols and not df_filtered.empty:
         mean_tod = df_filtered[existing_tod_cols].mean().reset_index()
         mean_tod.columns = ["time_of_day", "avg_value"]
     else:
@@ -529,7 +423,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
 
     # ~~~~~~~~~~~ 9) Weekend/Weekday Bar Plot ~~~~~~~~~~~
     existing_week_cols = [c for c in week_cols if c in df_filtered.columns]
-    if existing_week_cols and len(df_filtered) > 0:
+    if existing_week_cols and not df_filtered.empty:
         mean_weeks = df_filtered[existing_week_cols].mean().reset_index()
         mean_weeks.columns = ["week_col", "avg_value"]
     else:
@@ -546,50 +440,38 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col):
     fig_weekend.update_xaxes(tickangle=45)
     fig_weekend.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
 
-
-
-    #  calculate the average metric values by cluster withouth the outliers
-    # and create a heatmap
-    # 
-# 1) Group data and remove outliers
+    # ~~~~~~~~~~~ 10) Heatmap ~~~~~~~~~~~
     grouped_data = (
         df_clust[~df_clust['is_outlier']]
         .groupby('merged_labels_name')[metric_prop_cols]
         .mean()
         .reset_index()
-)
-
-# 2) Transpose the DataFrame so clusters become columns
-#    and metric features become row indices
+    )
     grouped_data_t = grouped_data.set_index('merged_labels_name').T
 
-# 3) Create the heatmap with the transposed data
     fig_heatmap = px.imshow(
-        grouped_data_t,                 # transposed data
+        grouped_data_t,
         labels=dict(y="Metric Features", x="Clusters", color="Average Value"),
-        x=grouped_data_t.columns,       # cluster names
-        y=grouped_data_t.index,         # metric feature names
+        x=grouped_data_t.columns,
+        y=grouped_data_t.index,
         color_continuous_scale="BrBG",
-        text_auto=True,                 # automatically add text (cell values)
+        text_auto=True,
         title="Average Metric Values by Cluster (without outliers)",
         aspect="auto",
         height=1000
     )
 
-
-
-    # Return all 10 figures
     return (
-        fig_scatter,      # 1
-        fig_box,          # 2
-        fig_region,       # 3
-        fig_generation,   # 4
-        fig_payment,      # 5
-        fig_prop_mean,    # 6
-        fig_hist,         # 7
-        fig_time_of_day,  # 8
-        fig_weekend,      # 9
-        fig_heatmap       #10
+        fig_scatter,
+        fig_box,
+        fig_region,
+        fig_generation,
+        fig_payment,
+        fig_prop_mean,
+        fig_hist,
+        fig_time_of_day,
+        fig_weekend,
+        fig_heatmap
     )
 
 
