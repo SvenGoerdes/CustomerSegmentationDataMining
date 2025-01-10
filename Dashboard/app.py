@@ -195,7 +195,7 @@ app.layout = dmc.Container(
         dmc.Title("Average Metric Values by Cluster", color="#000000", size="h2"),
         html.Hr(),
         html.P(
-            'The heatmap shows the average metric values by cluster without the outliers.'
+            'The heatmap shows the average values by cluster without the outliers. The values have been standardized before. Therefore a value above 0 means that the cluster has a higher value than the overall average.'
         ),
         dcc.Graph(figure={}, id='cluster-heatmap'),
     ],
