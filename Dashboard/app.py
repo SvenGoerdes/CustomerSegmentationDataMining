@@ -81,7 +81,7 @@ app = Dash()
 app.layout = dmc.Container(
     children=[
         dmc.Title("Data Mining Cluster Dashboard", color='#000000', size="h1"),
-        html.P('Disclaimer: The Dashboard shows plots that include the outliers...'),
+        html.P('Note: The Dashboard includes plots that display outliers as part of the analysis.”'),
         html.Hr(),
         html.Br(),
     
@@ -120,16 +120,79 @@ app.layout = dmc.Container(
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         # METADATA OVERVIEW SECTION
         # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        # A) METADATA OVERVIEW SECTION
+        # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
         html.Div(
             id='metadata-overview-content',
-            style={'display': 'none'},
+            style={'display': 'none'},  # hidden by default
             children=[
+                # A nice heading
                 dmc.Title("Metadata: Overview", color="blue", size="h2"),
                 html.Hr(),
+                # Short introduction about the metadata and dataset. The dataset contains about 31236 rows and 44 columns. The original columns have been preprocessed and transformed into 
+                # relative proportions, which are used for clustering. The dataset contains information about customer behavior, cuisine preferences, and demographics.
+                # 
                 html.B(
-                    'The dataset contains about 31236 rows and 44 columns...'
+                    'The dataset contains about 31236 rows and 44 columns. '
+                    'Some of the original columns have been preprocessed and transformed into relative proportions, '
+                    'which are used for clustering and for the dashboard. The dataset information/columns can be splitted into customer behavior, '
+                    'cuisine preferences, and demographics. '
+                    'Additionally, we have added the outliers back into the dataset for the dashboard. We used the nearest centroid to assign the cluster label to the outliers.'
                 ),
-                # (Truncated for brevity)
+                html.Br(),
+                html.Br(),
+                html.Br(),
+                html.B('The following sections provide an overview of the columns in the dataset:'),
+                html.Br(),
+                html.Hr(),
+                html.Br(),
+                html.Br(),
+                # make a empty paragaphr
+                # Customer Behavior columns
+                html.H3("Customer Behavior Columns"),
+                # add a short text about the metadata of the customer behaviour columns
+                # html.P('This is some text about the metadata of the behaviour columns'),
+                # html.Ul([html.Li(col) for col in cust_col]),
+                html.P('The behaviour columns are defined as following.'),
+                html.Ul([
+                html.Li("prop_chain_orders — The share of total orders placed at chain restaurants."),
+                html.Li("prop_weekend_orders — The proportion of orders on weekends (Sat/Sun)."),
+                html.Li("prop_weekday_orders — The proportion of orders on weekdays (Mon–Fri)."),
+                html.Li("prop_orders_dawn — Fraction of orders during dawn hours."),
+                html.Li("prop_orders_morning — Fraction of orders in the morning."),
+                html.Li("prop_orders_afternoon — Fraction of orders in the afternoon."),
+                html.Li("prop_orders_evening — Fraction of orders in the evening."),
+                html.Li("first_order — A number indicating when the first order was. A 0 indicates at the start of the observation period."),
+                html.Li("last_order — A number indicating when the last order was. A 90 indicates at the end of the observation period"),
+                html.Li("order_recency — Time elapsed since the last order in the A 90 days timeframe of the dataset."),
+                html.Li("product_count — How many distinct products the customer has purchased."),
+                html.Li("vendor_count — How many different vendors the customer has used."),
+                html.Li("total_cui_spending — The total amount spent (across all cuisine orders)."),
+                html.Li("total_orders — The total number of orders the customer has made."),
+                html.Li("avg_daily_orders — Average orders per day, showing overall ordering frequency."),
+                html.Li("avg_order_value — Average monetary value per order."),
+                html.Li("products_per_vendor — Average distinct products purchased per vendor."),
+                ]),
+                # Cuisine columns
+                html.H3("Cuisine Preferences Columns"),
+                html.P('''The following columns specify how often a customer orders a certain cuisine. The values are in proportion to the total number of orders.
+                        As an example: if a customer orders 10 times in total and 3 times Indian food, the value in the column "prop_orders_indian" would be 0.3.'''),
+                # The columns can be overlapping. For example 
+                # html.H5('As an example: if a customer orders 10 times in total and 3 times Indian food, the value in the column "prop_orders_indian" would be 0.3.'),
+                html.Ul([html.Li(col) for col in cui_col]),
+                html.Br(),
+                # Demographics columns
+                html.H3("Demographics Columns"),
+                html.Ul([
+                    html.Li("customer_region — The geographic region where the customer resides."),
+                    html.Li("city — The city where the customer resides. Represented as an int."),
+                    html.Li("generation — The customer’s generational group (e.g., Gen-Z, Millennial)."),
+                    html.Li("customer_age — The numerical age of the customer."),
+                    html.Li("last_promo — Details of the most recent promo the customer used."),
+                    html.Li("payment_method — The method used by the customer to pay for orders."),
+                    html.Li("promo_used — A binary indicating whether the customer used a promotional offer."),
+                ]),
             ]
         ),
 
@@ -478,6 +541,8 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col, gen_filte
     # The Chain Enthusiasts  # The Indian Food Lovers    # The Average Consumers    # The Dawn Spenders    # Frequent High-Spenders    # The Morning Snackers
 
     grouped_data_t = grouped_data_t[['The Chain Enthusiasts', 'The Indian Food Lovers', 'The Average Consumers', 'The Dawn Spenders', 'Frequent High-Spenders', 'The Morning Snackers']]
+    # round the values of grouped_data_t to 2 decimal places
+    grouped_data_t = grouped_data_t.round(2)
 
 
     fig_heatmap = px.imshow(
