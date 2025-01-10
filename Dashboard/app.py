@@ -263,7 +263,8 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col, gen_filte
     if not gen_filter_list:
         # If user unselects everything, show no data or revert to all. 
         # We'll show no data for this example.
-        df_filtered = df_clust.iloc[0:0].copy()
+        df_filtered = df_clust.copy()
+        df_filtered_scaled = df_clust_scaled.copy()
     else:
         df_filtered = df_clust[df_clust['generation'].isin(gen_filter_list)].copy()
         df_filtered_scaled = df_clust_scaled[df_clust_scaled['generation'].isin(gen_filter_list)].copy()
@@ -461,6 +462,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col, gen_filte
     fig_weekend.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
 
     # scale the data for the metric_prop_cols features
+
 
 
     # ~~~~~~~~~~~ 10) Heatmap ~~~~~~~~~~~
