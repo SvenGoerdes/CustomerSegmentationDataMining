@@ -23,7 +23,7 @@ all_cols = cust_col + cui_col + demogr_col
 # filter columns that are numeric
 numeric_features = df_clust[all_cols].select_dtypes(include=['number']).columns
 
-metric_features = cust_col + cust_col + demogr_col  # old usage in your code
+metric_features = cust_col + cust_col + demogr_col
 
 # Filter for all columns that start with 'prop_'
 metric_prop_cols = [c for c in df_clust.columns if c.startswith('prop_')]
