@@ -195,7 +195,7 @@ app.layout = dmc.Container(
         dmc.Title("Average Metric Values by Cluster", color="#000000", size="h2"),
         html.Hr(),
         html.P(
-            'The heatmap shows the average metric values by cluster without the outliers. It does not filter by generation.'
+            'The heatmap shows the average metric values by cluster without the outliers.'
         ),
         dcc.Graph(figure={}, id='cluster-heatmap'),
     ],
