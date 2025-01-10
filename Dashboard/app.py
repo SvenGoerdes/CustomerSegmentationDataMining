@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.express as px
 import dash_mantine_components as dmc
 import json
+from sklearn.preprocessing import StandardScaler
 
 # ------------------------------------------------------------------
 # 1) Load and prepare data
@@ -26,6 +27,24 @@ metric_features = cust_col + cust_col + demogr_col  # old usage in your code
 
 # Filter for all columns that start with 'prop_'
 metric_prop_cols = [c for c in df_clust.columns if c.startswith('prop_')]
+
+# append the fowlloing columns to the list 'first_order', 'order_recency', 'total_cui_spending', 'avg_order_value', 'products_per_vendor'
+metric_prop_cols.extend(['first_order', 'order_recency', 'total_cui_spending', 'avg_order_value', 'products_per_vendor'])
+
+# standardscale all the metric_prop_cols
+scaler = StandardScaler()
+
+# only where is_outliers is False
+df_clust_scaled = scaler.fit_transform(df_clust[metric_prop_cols][~df_clust['is_outlier']])
+
+# convert to dataframe
+df_clust_scaled = pd.DataFrame(df_clust_scaled, columns=metric_prop_cols)
+
+# add generation column 
+df_clust_scaled['generation'] = df_clust['generation']
+df_clust_scaled['is_outlier'] = df_clust['is_outlier']
+df_clust_scaled['merged_labels_name'] = df_clust['merged_labels_name']
+
 
 # Identify columns that start with 'prop_' from the behavior set
 prop_cols_behav = [c for c in cust_col if c.startswith('prop_')]
@@ -247,6 +266,7 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col, gen_filte
         df_filtered = df_clust.iloc[0:0].copy()
     else:
         df_filtered = df_clust[df_clust['generation'].isin(gen_filter_list)].copy()
+        df_filtered_scaled = df_clust_scaled[df_clust_scaled['generation'].isin(gen_filter_list)].copy()
 
     # 3) Filter by cluster
     if active_tab == 'tab-7-example-graph':
@@ -440,14 +460,23 @@ def update_graph(col_chosen_1, col_chosen_2, active_tab, behavior_col, gen_filte
     fig_weekend.update_xaxes(tickangle=45)
     fig_weekend.update_traces(marker_color="rgba(0, 102, 0, 0.5)")
 
+    # scale the data for the metric_prop_cols features
+
+
     # ~~~~~~~~~~~ 10) Heatmap ~~~~~~~~~~~
     grouped_data = (
-        df_clust[~df_clust['is_outlier']]
+        df_filtered_scaled[~df_filtered_scaled['is_outlier']]
         .groupby('merged_labels_name')[metric_prop_cols]
         .mean()
         .reset_index()
     )
     grouped_data_t = grouped_data.set_index('merged_labels_name').T
+
+    # please order the clusters as follows:
+    # The Chain Enthusiasts  # The Indian Food Lovers    # The Average Consumers    # The Dawn Spenders    # Frequent High-Spenders    # The Morning Snackers
+
+    grouped_data_t = grouped_data_t[['The Chain Enthusiasts', 'The Indian Food Lovers', 'The Average Consumers', 'The Dawn Spenders', 'Frequent High-Spenders', 'The Morning Snackers']]
+
 
     fig_heatmap = px.imshow(
         grouped_data_t,
